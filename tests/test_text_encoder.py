@@ -7,7 +7,8 @@ class TestTextEncoder(unittest.TestCase):
 
     def test_encode(self):
         text = "This is a test sentence."
-        latent_representation = self.encoder.encode(text)
+        genre = "Action"
+        latent_representation = self.encoder.encode(text, genre)
         self.assertIsNotNone(latent_representation)
         self.assertEqual(latent_representation.shape[0], 1)  # Batch size should be 1
         self.assertEqual(latent_representation.shape[1], 512)  # Sequence length should be 512
