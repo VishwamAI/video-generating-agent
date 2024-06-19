@@ -1,5 +1,6 @@
 import torch
 from transformers import BertTokenizer, BertModel
+import logging
 
 class TextEncoder:
     def __init__(self, model_name='bert-base-uncased'):
@@ -15,6 +16,12 @@ class TextEncoder:
 if __name__ == "__main__":
     import argparse
 
+    # Set up logging
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s', handlers=[
+        logging.FileHandler("text_encoder.log"),
+        logging.StreamHandler()
+    ])
+
     parser = argparse.ArgumentParser(description="Encode text into latent representation using BERT.")
     parser.add_argument("text", type=str, help="Text description to encode.")
     parser.add_argument("genre", type=str, help="Genre of the text description.")
@@ -22,4 +29,4 @@ if __name__ == "__main__":
 
     encoder = TextEncoder()
     latent_representation = encoder.encode(args.text, args.genre)
-    print(latent_representation)
+    logging.info(latent_representation)

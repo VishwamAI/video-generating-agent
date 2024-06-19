@@ -4,6 +4,7 @@ import os
 import torch
 from basicsr.archs.rrdbnet_arch import RRDBNet
 from realesrgan import RealESRGANer
+import logging
 
 def upscale_video(input_video, output_video, model_path, scale=4, tile=0, tile_pad=10, pre_pad=0, fp32=False, gpu_id=None):
     # Load the model
@@ -21,7 +22,7 @@ def upscale_video(input_video, output_video, model_path, scale=4, tile=0, tile_p
     # Open the input video
     cap = cv2.VideoCapture(input_video)
     if not cap.isOpened():
-        print(f"Error: Could not open video {input_video}")
+        logging.error(f"Error: Could not open video {input_video}")
         return
 
     # Get video properties
@@ -40,15 +41,15 @@ def upscale_video(input_video, output_video, model_path, scale=4, tile=0, tile_p
         if not ret:
             break
 
-        print(f"Processing frame {frame_idx + 1}/{total_frames}")
+        logging.info(f"Processing frame {frame_idx + 1}/{total_frames}")
         frame_idx += 1
 
         # Enhance the frame
         try:
             output, _ = upsampler.enhance(frame, outscale=scale)
         except RuntimeError as error:
-            print(f"Error: {error}")
-            print("If you encounter CUDA out of memory, try to set --tile with a smaller number.")
+            logging.error(f"Error: {error}")
+            logging.error("If you encounter CUDA out of memory, try to set --tile with a smaller number.")
             break
 
         # Write the frame to the output video
@@ -57,9 +58,15 @@ def upscale_video(input_video, output_video, model_path, scale=4, tile=0, tile_p
     # Release everything if job is finished
     cap.release()
     out.release()
-    print(f"Video saved to {output_video}")
+    logging.info(f"Video saved to {output_video}")
 
 if __name__ == '__main__':
+    # Set up logging
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s', handlers=[
+        logging.FileHandler("video_upscale.log"),
+        logging.StreamHandler()
+    ])
+
     parser = argparse.ArgumentParser()
     parser.add_argument('-i', '--input', type=str, required=True, help='Input video file')
     parser.add_argument('-o', '--output', type=str, required=True, help='Output video file')

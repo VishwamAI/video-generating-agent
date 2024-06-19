@@ -2,6 +2,8 @@ import unittest
 import os
 import json
 from scripts.compile_video import compile_video
+from PIL import Image
+import wave
 
 class TestCompileVideo(unittest.TestCase):
     def setUp(self):
@@ -16,11 +18,17 @@ class TestCompileVideo(unittest.TestCase):
         os.makedirs(self.images_dir, exist_ok=True)
         with open(self.content_file, "w") as f:
             json.dump({"content": "Test content"}, f)
-        with open(self.audio_file, "w") as f:
-            f.write("Test audio content")
+
+        # Create a valid audio file
+        with wave.open(self.audio_file, 'w') as f:
+            f.setnchannels(1)
+            f.setsampwidth(2)
+            f.setframerate(44100)
+            f.writeframes(b'\x00\x00' * 44100 * 5)  # 5 seconds of silence
+
         for i in range(5):
-            with open(f"{self.images_dir}/image_{i}.png", "w") as f:
-                f.write("Test image content")
+            img = Image.new('RGB', (100, 100), color = (73, 109, 137))
+            img.save(f"{self.images_dir}/image_{i}.png")
 
     def test_compile_video(self):
         output_path = compile_video(self.project_name)

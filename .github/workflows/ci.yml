@@ -4,9 +4,11 @@ on:
   push:
     branches:
       - main
+      - feature/add-logging-and-genre-support
   pull_request:
     branches:
       - main
+      - feature/add-logging-and-genre-support
 
 jobs:
   build:
@@ -25,6 +27,10 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
+
+    - name: Set PYTHONPATH
+      run: |
+        echo "PYTHONPATH=$PYTHONPATH:/home/runner/work/video-generating-agent/video-generating-agent/nonrigid_nerf" >> $GITHUB_ENV
 
     - name: Run tests
       run: |

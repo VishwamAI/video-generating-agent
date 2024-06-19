@@ -57,5 +57,13 @@ To support multiple genres, the following strategy will be implemented:
 4. **Super-Resolution Module**: No specific changes required for genre support.
 5. **Temporal Consistency Module**: Use genre information to influence the style of motion and transitions between frames, ensuring that the generated video maintains a consistent genre-specific aesthetic.
 
+## Integration of Text and Genre Representations
+The `train.py` script has been updated to integrate the text and genre representations into the training process. The `TextEncoder` class is instantiated and passed to the `training_wrapper_class`, which uses the `text_encoder` to encode the text and genre into latents. These latents are included in the `additional_pixel_information` dictionary and used during the rendering process.
+
+### Changes to `train.py`
+- The `TextEncoder` class is instantiated and passed to the `training_wrapper_class`.
+- The `training_wrapper_class` has been updated to include the `text_encoder` as an attribute.
+- The forward method of the `training_wrapper_class` encodes the text and genre using the `text_encoder` and includes the resulting latents in the `additional_pixel_information` dictionary.
+
 ## Conclusion
 This design document provides a high-level overview of the custom text-to-video model, outlining its architecture, components, and training procedure. The model aims to generate high-quality, dynamic videos from text descriptions, supporting multiple genres and varying resolutions. The next steps involve implementing and testing the model based on this design.

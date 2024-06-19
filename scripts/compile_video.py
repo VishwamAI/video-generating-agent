@@ -1,6 +1,7 @@
 import os
 import json
 import moviepy.editor as mp
+import logging
 
 def compile_video(project_name):
     # Load project content
@@ -41,9 +42,15 @@ def compile_video(project_name):
 if __name__ == "__main__":
     import argparse
 
+    # Set up logging
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s', handlers=[
+        logging.FileHandler("compile_video.log"),
+        logging.StreamHandler()
+    ])
+
     parser = argparse.ArgumentParser(description="Compile video from generated content.")
     parser.add_argument("project_name", type=str, help="Name of the project to compile.")
     args = parser.parse_args()
 
     output_video = compile_video(args.project_name)
-    print(f"Video compiled successfully: {output_video}")
+    logging.info(f"Video compiled successfully: {output_video}")

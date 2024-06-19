@@ -1,5 +1,7 @@
 import unittest
 import os
+import cv2
+import numpy as np
 from scripts.video_upscale import upscale_video
 
 class TestVideoUpscale(unittest.TestCase):
@@ -19,6 +21,23 @@ class TestVideoUpscale(unittest.TestCase):
     def test_upscale_video(self):
         upscale_video(self.input_video, self.output_video, self.model_path, self.scale)
         self.assertTrue(os.path.exists(self.output_video))
+
+    def test_upscale_video_invalid_input(self):
+        with self.assertRaises(FileNotFoundError):
+            upscale_video("invalid_input.mp4", self.output_video, self.model_path, self.scale)
+
+    def test_upscale_video_invalid_model(self):
+        with self.assertRaises(RuntimeError):
+            upscale_video(self.input_video, self.output_video, "invalid_model.pth", self.scale)
+
+    def test_upscale_video_check_resolution(self):
+        upscale_video(self.input_video, self.output_video, self.model_path, self.scale)
+        cap = cv2.VideoCapture(self.output_video)
+        width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        cap.release()
+        self.assertEqual(width, 64 * self.scale)
+        self.assertEqual(height, 64 * self.scale)
 
     def tearDown(self):
         if os.path.exists(self.input_video):
