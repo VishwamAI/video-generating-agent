@@ -929,22 +929,12 @@ def render_rays(
         rays_o[..., None, :] + rays_d[..., None, :] * z_vals[..., :, None]
     )  # [N_rays, N_samples, 3]
 
-    if detailed_output:
-        raw, details = network_query_fn(
-            pts,
-            viewdirs,
-            additional_pixel_information,
-            network_fn,
-            detailed_output=detailed_output,
-        )
-    else:
-        raw = network_query_fn(
-            pts,
-            viewdirs,
-            additional_pixel_information,
-            network_fn,
-            detailed_output=detailed_output,
-        )
+    raw = network_query_fn(
+        pts,
+        viewdirs,
+        additional_pixel_information,
+        network_fn,
+    )
     (
         rgb_map,
         disp_map,
@@ -980,22 +970,12 @@ def render_rays(
         )  # [N_rays, N_samples + N_importance, 3]
 
         run_fn = network_fn if network_fine is None else network_fine
-        if detailed_output:
-            raw, fine_details = network_query_fn(
-                pts,
-                viewdirs,
-                additional_pixel_information,
-                run_fn,
-                detailed_output=detailed_output,
-            )
-        else:
-            raw = network_query_fn(
-                pts,
-                viewdirs,
-                additional_pixel_information,
-                run_fn,
-                detailed_output=detailed_output,
-            )
+        raw = network_query_fn(
+            pts,
+            viewdirs,
+            additional_pixel_information,
+            run_fn,
+        )
 
         (
             rgb_map,
@@ -1010,31 +990,6 @@ def render_rays(
     if retraw:
         ret["raw"] = raw
     if N_importance > 0:
-        ret["rgb0"] = rgb_map_0
-        ret["disp0"] = disp_map_0
-        ret["acc0"] = acc_map_0
-        ret["z_std"] = torch.std(z_samples, dim=-1, unbiased=False)  # [N_rays]
-        if detailed_output:
-            # N_rays x N_samples_per_ray
-            ret["fine_visibility_weights"] = visibility_weights
-            # N_rays x N_samples_per_ray
-            ret["fine_opacity_alpha"] = opacity_alpha
-            for key in fine_details.keys():
-                ret["fine_" + str(key)] = fine_details[key]
-    if detailed_output:
-        # N_rays x N_samples_per_ray
-        ret["visibility_weights"] = visibility_weights_0
-        ret["opacity_alpha"] = opacity_alpha_0  # N_rays x N_samples_per_ray
-        for key in details.keys():
-            ret[key] = details[key]
-
-    global DEBUG
-    if DEBUG:
-        for k in ret:
-            if (torch.isnan(ret[k]).any() or torch.isinf(ret[k]).any()):
-                logging.error(f"! [Numerical Error] {k} contains nan or inf.")
-
-    return ret
 
 
 def config_parser():
