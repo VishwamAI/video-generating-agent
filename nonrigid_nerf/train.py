@@ -22,15 +22,32 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
     logging.StreamHandler()
 ])
 
-from run_nerf_helpers import *
+from nonrigid_nerf.run_nerf_helpers import *
 from scripts.text_encoder import TextEncoder
 #from load_llff import load_llff_data_multi_view
-from load_llff import load_llff_data
+from nonrigid_nerf.load_llff import load_llff_data
 
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 DEBUG = True  # gets overwritten by args.debug
 
+def ndc_rays(H, W, focal, near, rays_o, rays_d):
+    """Convert ray origins and directions to normalized device coordinates (NDC)."""
+    t = -(near + rays_o[..., 2]) / rays_d[..., 2]
+    rays_o_ndc = rays_o + t[..., None] * rays_d
+
+    o0 = rays_o_ndc[..., 0] / rays_o_ndc[..., 2] * focal / W
+    o1 = rays_o_ndc[..., 1] / rays_o_ndc[..., 2] * focal / H
+    o2 = 1.0 + 2.0 * near / rays_o_ndc[..., 2]
+
+    d0 = rays_d[..., 0] / rays_d[..., 2] * focal / W
+    d1 = rays_d[..., 1] / rays_d[..., 2] * focal / H
+    d2 = -2.0 * near / rays_d[..., 2]
+
+    rays_o_ndc = torch.stack([o0, o1, o2], -1)
+    rays_d_ndc = torch.stack([d0, d1, d2], -1)
+
+    return rays_o_ndc, rays_d_ndc
 
 def batchify(fn, chunk, detailed_output=False):
     """Constructs a version of 'fn' that applies to smaller batches."""
@@ -184,8 +201,8 @@ class training_wrapper_class(torch.nn.Module):
         start,
         dataset_extras,
         batch_pixel_indices,
+        ray_params,  # Added ray_params to the method signature
     ):
-
         # necessary to duplicate weights correctly across gpus. hacky workaround
         self.coarse_model.ray_bender = (self.ray_bender,)
         render_kwargs_train["network_fn"] = self.coarse_model
@@ -195,9 +212,9 @@ class training_wrapper_class(torch.nn.Module):
             render_kwargs_train["network_fine"] = self.fine_model
         ray_bending_latents_list = self.latents
 
-        ray_bending_latents_list = torch.stack(ray_bending_latents_list, dim=0).to(
-            target_s.get_device()
-        )  # num_latents x latent_size
+        ray_bending_latents_list = torch.stack(ray_bending_latents_list, dim=0)
+        if target_s.is_cuda:
+            ray_bending_latents_list = ray_bending_latents_list.to(target_s.get_device())
         imageid_to_timestepid = torch.tensor(
             dataset_extras["imageid_to_timestepid"]
         )  # num_images
@@ -235,6 +252,7 @@ class training_wrapper_class(torch.nn.Module):
             retraw=True,
             additional_pixel_information=additional_pixel_information,
             detailed_output=detailed_output,
+            ray_params=ray_params,  # Pass ray_params to the render function
             **render_kwargs_train,
         )  # rays need to be split for parallel call
 
@@ -367,6 +385,7 @@ def render(
     c2w_staticcam=None,
     additional_pixel_information=None,
     detailed_output=False,
+    ray_params=None,
     **kwargs,
 ):
     """Render rays
@@ -392,7 +411,7 @@ def render(
       extras: dict with everything returned by render_rays().
     """
 
-    device = rays_o[0].get_device()
+    device = rays_o.device if rays_o.is_cuda else 'cpu'
 
     if use_viewdirs:
         # provide ray directions as input
@@ -416,8 +435,7 @@ def render(
     sh = rays_d.shape  # [..., 3]
     if ndc:
         # for forward facing scenes
-        raise RuntimeError("not implemented. change H, W, focal to use ray_params instead")
-        rays_o, rays_d = ndc_rays(H, W, focal, 1.0, rays_o, rays_d)
+        rays_o, rays_d = ndc_rays(ray_params['H'], ray_params['W'], ray_params['focal'], 1.0, rays_o, rays_d)
 
     # Create ray batch
     rays_o = torch.reshape(rays_o, [-1, 3]).float()
@@ -749,9 +767,8 @@ def create_nerf(args, autodecoder_variables=None, ignore_optimizer=False):
     }
 
     # NDC only good for LLFF-style forward facing data
-    # if args.dataset_type != 'llff' or args.no_ndc:
-    #    print('Not ndc!')
-    render_kwargs_train["ndc"] = False
+    if args.dataset_type != 'llff' or args.no_ndc:
+        render_kwargs_train["ndc"] = False
     render_kwargs_train["lindisp"] = False
 
     render_kwargs_test = {k: render_kwargs_train[k] for k in render_kwargs_train}
@@ -912,22 +929,12 @@ def render_rays(
         rays_o[..., None, :] + rays_d[..., None, :] * z_vals[..., :, None]
     )  # [N_rays, N_samples, 3]
 
-    if detailed_output:
-        raw, details = network_query_fn(
-            pts,
-            viewdirs,
-            additional_pixel_information,
-            network_fn,
-            detailed_output=detailed_output,
-        )
-    else:
-        raw = network_query_fn(
-            pts,
-            viewdirs,
-            additional_pixel_information,
-            network_fn,
-            detailed_output=detailed_output,
-        )
+    raw = network_query_fn(
+        pts,
+        viewdirs,
+        additional_pixel_information,
+        network_fn,
+    )
     (
         rgb_map,
         disp_map,
@@ -963,22 +970,12 @@ def render_rays(
         )  # [N_rays, N_samples + N_importance, 3]
 
         run_fn = network_fn if network_fine is None else network_fine
-        if detailed_output:
-            raw, fine_details = network_query_fn(
-                pts,
-                viewdirs,
-                additional_pixel_information,
-                run_fn,
-                detailed_output=detailed_output,
-            )
-        else:
-            raw = network_query_fn(
-                pts,
-                viewdirs,
-                additional_pixel_information,
-                run_fn,
-                detailed_output=detailed_output,
-            )
+        raw = network_query_fn(
+            pts,
+            viewdirs,
+            additional_pixel_information,
+            run_fn,
+        )
 
         (
             rgb_map,
@@ -993,31 +990,6 @@ def render_rays(
     if retraw:
         ret["raw"] = raw
     if N_importance > 0:
-        ret["rgb0"] = rgb_map_0
-        ret["disp0"] = disp_map_0
-        ret["acc0"] = acc_map_0
-        ret["z_std"] = torch.std(z_samples, dim=-1, unbiased=False)  # [N_rays]
-        if detailed_output:
-            # N_rays x N_samples_per_ray
-            ret["fine_visibility_weights"] = visibility_weights
-            # N_rays x N_samples_per_ray
-            ret["fine_opacity_alpha"] = opacity_alpha
-            for key in fine_details.keys():
-                ret["fine_" + str(key)] = fine_details[key]
-    if detailed_output:
-        # N_rays x N_samples_per_ray
-        ret["visibility_weights"] = visibility_weights_0
-        ret["opacity_alpha"] = opacity_alpha_0  # N_rays x N_samples_per_ray
-        for key in details.keys():
-            ret[key] = details[key]
-
-    global DEBUG
-    if DEBUG:
-        for k in ret:
-            if (torch.isnan(ret[k]).any() or torch.isinf(ret[k]).any()):
-                logging.error(f"! [Numerical Error] {k} contains nan or inf.")
-
-    return ret
 
 
 def config_parser():

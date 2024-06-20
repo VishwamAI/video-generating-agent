@@ -34,17 +34,22 @@ class TestTrainingWrapperClass(unittest.TestCase):
         rays_d = torch.randn(1024, 3)
         i = 0
         render_kwargs_train = {}
-        target_s = torch.randn(1024, 3)
+        target_s = torch.randn(1024, 3).to(torch.device("cuda" if torch.cuda.is_available() else "cpu"))
         global_step = 0
         start = 0
         dataset_extras = {"imageid_to_timestepid": [0, 1, 2, 3, 4]}
         batch_pixel_indices = torch.randint(0, 5, (1024, 2))
-        text = "Sample text description"
-        genre = "Action"
+
+        # Define ray_params
+        ray_params = {
+            'H': 800,  # Example height
+            'W': 800,  # Example width
+            'focal': 500.0  # Example focal length
+        }
 
         # Call the forward method
         loss = self.wrapper.forward(
-            args, rays_o, rays_d, i, render_kwargs_train, target_s, global_step, start, dataset_extras, batch_pixel_indices, text, genre
+            args, rays_o, rays_d, i, render_kwargs_train, target_s, global_step, start, dataset_extras, batch_pixel_indices, ray_params=ray_params
         )
 
         # Check that the loss is a tensor
@@ -74,20 +79,29 @@ class TestTrainingWrapperClass(unittest.TestCase):
         rays_d = torch.randn(1024, 3)
         i = 0
         render_kwargs_train = {}
-        target_s = torch.randn(1024, 3)
+        target_s = torch.randn(1024, 3).to(torch.device("cuda" if torch.cuda.is_available() else "cpu"))
         global_step = 0
         start = 0
         dataset_extras = {"imageid_to_timestepid": [0, 1, 2, 3, 4]}
         batch_pixel_indices = torch.randint(0, 5, (1024, 2))
-        text = "Sample text description"
-        genre = "Action"
 
         # Encode text and genre
+        text = "Sample text description"
+        genre = "Action"
         text_embedding, genre_embedding = self.text_genre_encoder.encode(text, genre)
+        dataset_extras["text_descriptions"] = [text] * 5
+        dataset_extras["genres"] = [genre] * 5
+
+        # Define ray_params
+        ray_params = {
+            'H': 800,  # Example height
+            'W': 800,  # Example width
+            'focal': 500.0  # Example focal length
+        }
 
         # Call the forward method
         loss = self.wrapper.forward(
-            args, rays_o, rays_d, i, render_kwargs_train, target_s, global_step, start, dataset_extras, batch_pixel_indices, text, genre
+            args, rays_o, rays_d, i, render_kwargs_train, target_s, global_step, start, dataset_extras, batch_pixel_indices, ray_params=ray_params
         )
 
         # Check that the loss is a tensor

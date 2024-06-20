@@ -30,8 +30,20 @@ class TestCompileVideo(unittest.TestCase):
             img = Image.new('RGB', (100, 100), color = (73, 109, 137))
             img.save(f"{self.images_dir}/image_{i}.png")
 
-    def test_compile_video(self):
-        output_path = compile_video(self.project_name)
+    def test_compile_video_1080p(self):
+        output_path = compile_video(self.project_name, resolution="1080p")
+        self.assertTrue(os.path.exists(output_path))
+
+    def test_compile_video_2K(self):
+        output_path = compile_video(self.project_name, resolution="2K")
+        self.assertTrue(os.path.exists(output_path))
+
+    def test_compile_video_3K(self):
+        output_path = compile_video(self.project_name, resolution="3K")
+        self.assertTrue(os.path.exists(output_path))
+
+    def test_compile_video_4K(self):
+        output_path = compile_video(self.project_name, resolution="4K")
         self.assertTrue(os.path.exists(output_path))
 
     def tearDown(self):

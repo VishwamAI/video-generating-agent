@@ -1,0 +1,6 @@
+2024-06-19 17:51:05,681 - WARNING - /home/ubuntu/.local/lib/python3.10/site-packages/moviepy/video/VideoClip.py:889: DeprecationWarning: Starting with ImageIO v3 the behavior of this function will switch to that of iio.v3.imread. To keep the current behavior (and make this warning disappear) use `import imageio.v2 as imageio` or call `imageio.v2.imread` directly.
+  img = imread(img)
+
+2024-06-19 17:51:06,986 - WARNING - /home/ubuntu/.local/lib/python3.10/site-packages/huggingface_hub/file_download.py:1132: FutureWarning: `resume_download` is deprecated and will be removed in version 1.0.0. Downloads always resume when possible. If you want to force a new download, use `force_download=True`.
+  warnings.warn(
+
