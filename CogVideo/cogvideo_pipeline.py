@@ -403,6 +403,8 @@ class InferenceModel_Sequential(CogVideoCacheModel):
         super().__init__(args, transformer=transformer, parallel_output=parallel_output, window_size=-1, cogvideo_stage=1)
 
     def final_forward(self, logits, **kwargs):
+        # Verify if limiting to the first 20,000 weights is intentional and aligns with the model's design.
+        # Ensure the logits are transformed correctly for sequential generation.
         logits_parallel = logits
         logits_parallel = torch.nn.functional.linear(logits_parallel.float(), self.transformer.word_embeddings.weight[:20000].float())
         return logits_parallel
@@ -413,6 +415,8 @@ class InferenceModel_Interpolate(CogVideoCacheModel):
         super().__init__(args, transformer=transformer, parallel_output=parallel_output, window_size=10, cogvideo_stage=2)
 
     def final_forward(self, logits, **kwargs):
+        # Verify if limiting to the first 20,000 weights is intentional and aligns with the model's design.
+        # Ensure the logits are transformed correctly for interpolation and direct super-resolution.
         logits_parallel = logits
         logits_parallel = torch.nn.functional.linear(logits_parallel.float(), self.transformer.word_embeddings.weight[:20000].float())
         return logits_parallel
