@@ -95,7 +95,7 @@ jobs:
 
     - name: Wait for dataset extraction
       run: |
-        for i in {1..60}; do
+        for i in {1..30}; do
           if [ -d "preprocessed_data/nerf_llff_data/trex/images" ]; then
             echo "Dataset extraction complete."
             break
@@ -103,7 +103,7 @@ jobs:
             echo "Waiting for dataset extraction... (Attempt $i)"
             echo "Current contents of preprocessed_data directory:"
             ls -l preprocessed_data
-            sleep 10
+            sleep 5
           fi
         done
         if [ ! -d "preprocessed_data/nerf_llff_data/trex/images" ]; then
