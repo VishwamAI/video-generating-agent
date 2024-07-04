@@ -72,6 +72,10 @@ jobs:
           exit 1
         fi
 
+    - name: List contents of preprocessed_data directory after download
+      run: |
+        ls preprocessed_data
+
     - name: Wait for dataset extraction
       run: |
         sleep 60
