@@ -131,7 +131,7 @@ jobs:
     - name: List contents of images directories in nerf_llff_data
       run: |
         echo "Contents of images directories in nerf_llff_data:"
-        ls -l preprocessed_data/nerf_llff_data/trex/images/
+        ls -l preprocessed_data/nerf_llff_data/nerf_llff_data/trex/images/
 
     - name: Verify presence of image files in nerf_llff_data directory
       run: |
