@@ -84,6 +84,8 @@ jobs:
         fi
         echo "Contents of preprocessed_data directory after unzip:"
         ls -l preprocessed_data
+        echo "Contents of nerf_llff_data directory after unzip:"
+        ls -l preprocessed_data/nerf_llff_data
         if [ -d "preprocessed_data/nerf_llff_data" ] || [ -d "preprocessed_data/nerf_real_360" ] || [ -d "preprocessed_data/nerf_synthetic" ]; then
           echo "Dataset directories exist."
         else
