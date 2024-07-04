@@ -32,6 +32,7 @@ jobs:
     - name: Verify installation
       run: |
         pip list
+        python -c "import torchvision.transforms.functional_tensor"
 
     - name: Set PYTHONPATH
       run: |
