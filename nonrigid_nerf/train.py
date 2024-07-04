@@ -1003,7 +1003,6 @@ def config_parser():
         "--config",
         is_config_file=True,
         help="config file path",
-        default=os.path.join(code_folder, "configs", "default.txt"),
     )
     parser.add_argument("--expname", type=str, help="experiment name")
     parser.add_argument("--datadir", type=str, help="input data directory")
