@@ -81,6 +81,15 @@ jobs:
           exit 1
         fi
 
+    - name: Verify images directory
+      run: |
+        if [ -d "preprocessed_data/images" ]; then
+          echo "Images directory exists."
+        else
+          echo "Images directory does not exist."
+          exit 1
+        fi
+
     - name: Train model
       run: |
         python nonrigid_nerf/train.py --config nonrigid_nerf/configs/training_config.txt
