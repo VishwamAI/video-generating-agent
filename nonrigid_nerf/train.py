@@ -1307,7 +1307,7 @@ def get_full_resolution_intrinsics(args, dataset_extras):
 
     else: # monocular
         def _get_info(image_folder):
-            imgdir = os.path.join(args.datadir, image_folder)
+            imgdir = os.path.abspath('./preprocessed_data/images')
             imgnames = [f for f in sorted(os.listdir(imgdir)) if f.endswith('JPG') or f.endswith('jpg') or f.endswith('png')]
             imgfiles = [os.path.join(imgdir, f) for f in imgnames]
             def imread(f):
