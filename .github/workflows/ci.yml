@@ -61,8 +61,13 @@ jobs:
     - name: Create kaggle.json file
       run: |
         mkdir -p ~/.kaggle
-        echo "{\"username\":\"${{ secrets.KAGGLE_USERNAME }}\",\"key\":\"${{ secrets.KAGGLE_KEY }}\"}" > ~/.kaggle/kaggle.json
-        chmod 600 ~/.kaggle/kaggle.json
+        if [ -d ~/.kaggle ]; then
+          echo "{\"username\":\"${{ secrets.KAGGLE_USERNAME }}\",\"key\":\"${{ secrets.KAGGLE_KEY }}\"}" > ~/.kaggle/kaggle.json
+          chmod 600 ~/.kaggle/kaggle.json
+        else
+          echo "Failed to create .kaggle directory."
+          exit 1
+        fi
 
     - name: Install Kaggle CLI
       run: |
