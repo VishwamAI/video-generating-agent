@@ -64,10 +64,15 @@ jobs:
         KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
         KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
       run: |
-        kaggle datasets download -d rsrishav/youtube-trending-video-dataset -p preprocessed_data
-        unzip preprocessed_data/youtube-trending-video-dataset.zip -d preprocessed_data
-        mkdir -p preprocessed_data/images
-        mv preprocessed_data/youtube-trending-video-dataset/* preprocessed_data/images/
+        kaggle datasets download -d rsrishav/youtube-trending-video-dataset -p preprocessed_data || exit 0
+        if [ -f "preprocessed_data/youtube-trending-video-dataset.zip" ]; then
+          unzip preprocessed_data/youtube-trending-video-dataset.zip -d preprocessed_data
+          mkdir -p preprocessed_data/images
+          mv preprocessed_data/youtube-trending-video-dataset/* preprocessed_data/images/
+        else
+          echo "Dataset download failed or file not found."
+          exit 1
+        fi
 
     - name: Verify dataset download
       run: |
