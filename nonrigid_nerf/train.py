@@ -1307,8 +1307,18 @@ def get_full_resolution_intrinsics(args, dataset_extras):
 
     else: # monocular
         def _get_info(image_folder):
-            imgdir = os.path.abspath('./preprocessed_data/images')
+            dataset_dirs = ['nerf_llff_data', 'nerf_real_360', 'nerf_synthetic']
+            imgdir = None
+            for d in dataset_dirs:
+                potential_dir = os.path.join('./preprocessed_data', d)
+                if os.path.exists(potential_dir):
+                    imgdir = potential_dir
+                    break
+            if imgdir is None:
+                raise FileNotFoundError(f"No valid dataset directory found. Please ensure the dataset is correctly placed in one of the following directories: {', '.join(dataset_dirs)}.")
             imgnames = [f for f in sorted(os.listdir(imgdir)) if f.endswith('JPG') or f.endswith('jpg') or f.endswith('png')]
+            if not imgnames:
+                raise FileNotFoundError(f"No image files found in directory: {imgdir}.")
             imgfiles = [os.path.join(imgdir, f) for f in imgnames]
             def imread(f):
                 return imageio.v2.imread(f, ignoregamma=True) if f[-4:] == ".png" else imageio.v2.imread(f)
