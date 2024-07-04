@@ -1994,12 +1994,12 @@ def backup(results_folder):
         if os.path.exists(folder):  # Check if the folder exists
             for filetype in filetypes_to_copy:
                 for file in glob.glob(folder + "*" + filetype):
-                    shutil.copyfile(
-                        file,
-                        os.path.join(
-                            backup_folder, subfolder, os.path.split(file)[-1]
-                        ),
-                    )
+                    src_file = os.path.join(folder, file)
+                    dest_file = os.path.join(backup_folder, file)
+                    if os.path.exists(src_file):
+                        shutil.copyfile(src_file, dest_file)
+                    else:
+                        logging.warning(f"File not found: {src_file}. Skipping copy operation.")
     print("done")
 
 
