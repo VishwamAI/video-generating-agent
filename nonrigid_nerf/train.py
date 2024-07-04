@@ -1325,6 +1325,14 @@ def get_full_resolution_intrinsics(args, dataset_extras):
             height, width, _ = imread(imgfiles[0]).shape
             return imgfiles, height, width
 
+        scene_subdirs = ["fern", "flower", "fortress", "horns", "leaves", "orchids", "room", "trex"]
+        for subdir in scene_subdirs:
+            image_folder = os.path.join(args.datadir, subdir, "images")
+            if os.path.exists(image_folder):
+                imgfiles, height, width = _get_info(image_folder)
+                return imgfiles, height, width
+        raise FileNotFoundError(f"No image files found in any of the scene subdirectories: {scene_subdirs}.")
+
         image_folder = "images"
         imgfiles, height, width = _get_info(image_folder)
         center_x = width / 2
