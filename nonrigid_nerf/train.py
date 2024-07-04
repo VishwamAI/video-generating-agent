@@ -1991,14 +1991,15 @@ def backup(results_folder):
     # all files
     for subfolder in subfolders_to_copy:
         folder = os.path.join(this_folder, subfolder)
-        for filetype in filetypes_to_copy:
-            for file in glob.glob(folder + "*" + filetype):
-                shutil.copyfile(
-                    file,
-                    os.path.join(
-                        backup_folder, subfolder, os.path.split(file)[-1]
-                    ),
-                )
+        if os.path.exists(folder):  # Check if the folder exists
+            for filetype in filetypes_to_copy:
+                for file in glob.glob(folder + "*" + filetype):
+                    shutil.copyfile(
+                        file,
+                        os.path.join(
+                            backup_folder, subfolder, os.path.split(file)[-1]
+                        ),
+                    )
     print("done")
 
 
