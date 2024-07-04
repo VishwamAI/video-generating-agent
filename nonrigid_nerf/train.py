@@ -1973,7 +1973,7 @@ def create_folder(folder):
 
 def backup(results_folder):
     print("backing up... ", flush=True, end="")
-    special_files_to_copy = ["configs/default.txt"]  # ["specs.json"]
+    special_files_to_copy = []  # Removed reference to 'configs/default.txt'
     filetypes_to_copy = [".py"]
     subfolders_to_copy = ["", "llff_preprocessing/"]
 
