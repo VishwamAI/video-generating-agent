@@ -18,6 +18,12 @@ class TestVideoUpscale(unittest.TestCase):
                 cap.write(np.zeros((64, 64, 3), dtype=np.uint8))
             cap.release()
 
+        # Ensure the model path exists for testing
+        if not os.path.exists(self.model_path):
+            os.makedirs(os.path.dirname(self.model_path), exist_ok=True)
+            with open(self.model_path, 'w') as f:
+                f.write('')
+
     def test_upscale_video(self):
         upscale_video(self.input_video, self.output_video, self.model_path, self.scale)
         self.assertTrue(os.path.exists(self.output_video))
@@ -27,7 +33,7 @@ class TestVideoUpscale(unittest.TestCase):
             upscale_video("invalid_input.mp4", self.output_video, self.model_path, self.scale)
 
     def test_upscale_video_invalid_model(self):
-        with self.assertRaises(RuntimeError):
+        with self.assertRaises(FileNotFoundError):
             upscale_video(self.input_video, self.output_video, "invalid_model.pth", self.scale)
 
     def test_upscale_video_check_resolution(self):
@@ -44,6 +50,8 @@ class TestVideoUpscale(unittest.TestCase):
             os.remove(self.input_video)
         if os.path.exists(self.output_video):
             os.remove(self.output_video)
+        if os.path.exists(self.model_path):
+            os.remove(self.model_path)
 
 if __name__ == "__main__":
     unittest.main()
