@@ -1348,15 +1348,11 @@ def main_function(args):
     if args.dataset_type == "llff":
         #images, poses, bds, render_poses, i_test = load_llff_data_multi_view(
         images, poses, bds, render_poses, i_test = load_llff_data(
-            args.datadir,
-            factor=args.factor,
-            recenter=True,
-            bd_factor=args.bd_factor,
-            spherify=args.spherify,
+            args.datadir, factor=args.factor
         )
         dataset_extras = _get_multi_view_helper_mappings(images.shape[0], args.datadir)
         intrinsics, image_folder = get_full_resolution_intrinsics(args, dataset_extras)
-        
+
         hwf = poses[0, :3, -1]
         poses = poses[:, :3, :4]
         print("Loaded llff", images.shape, render_poses.shape, hwf, args.datadir)
