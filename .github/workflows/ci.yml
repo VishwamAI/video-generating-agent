@@ -72,6 +72,10 @@ jobs:
           exit 1
         fi
 
+    - name: Wait for dataset extraction
+      run: |
+        sleep 30
+
     - name: Verify dataset download
       run: |
         if [ -d "preprocessed_data/nerf_llff_data" ] || [ -d "preprocessed_data/nerf_real_360" ] || [ -d "preprocessed_data/nerf_synthetic" ]; then
