@@ -135,7 +135,7 @@ jobs:
 
     - name: Verify presence of image files in nerf_llff_data directory
       run: |
-        if ls preprocessed_data/nerf_llff_data/nerf_llff_data/trex/images/*.{png,jpg,jpeg} 1> /dev/null 2>&1; then
+        if ls preprocessed_data/nerf_llff_data/trex/images/*.{png,jpg,jpeg} 1> /dev/null 2>&1; then
           echo "Image files exist in nerf_llff_data directory."
         else
           echo "Image files do not exist in nerf_llff_data directory."
