@@ -127,6 +127,10 @@ jobs:
         done
         if [ ! -d "preprocessed_data/nerf_llff_data/trex/images" ]; then
           echo "Dataset extraction failed."
+          echo "Final contents of preprocessed_data directory:"
+          ls -l preprocessed_data
+          echo "Final contents of nerf_llff_data directory:"
+          ls -l preprocessed_data/nerf_llff_data
           exit 1
         fi
 
