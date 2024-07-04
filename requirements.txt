@@ -1,7 +1,7 @@
 moviepy
 basicsr>=1.4.2
-torch
-torchvision==0.11.3
+torch==1.10.0
+torchvision==0.11.1
 opencv-python
 transformers
 matplotlib
