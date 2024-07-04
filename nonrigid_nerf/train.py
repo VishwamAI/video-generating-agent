@@ -1996,7 +1996,7 @@ def backup(results_folder):
                 for file in glob.glob(folder + "*" + filetype):
                     src_file = os.path.join(folder, file)
                     dest_file = os.path.join(backup_folder, file)
-                    if os.path.exists(src_file):
+                    if os.path.exists(src_file) and src_file != dest_file:
                         shutil.copyfile(src_file, dest_file)
                     else:
                         logging.warning(f"File not found: {src_file}. Skipping copy operation.")
