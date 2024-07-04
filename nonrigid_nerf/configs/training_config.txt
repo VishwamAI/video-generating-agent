@@ -2,8 +2,8 @@
 
 # Experiment settings
 expname = "video_generation_experiment"
-datadir = "/home/ubuntu/video-generating-agent/preprocessed_data"
-rootdir = "/home/ubuntu/video-generating-agent/experiments"
+datadir = "./preprocessed_data"
+rootdir = "./experiments"
 
 # Training options
 netdepth = 8

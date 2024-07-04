@@ -2018,9 +2018,7 @@ if __name__ == "__main__":
     parser = config_parser()
     args = parser.parse_args()
 
-    results_folder = os.path.join(args.rootdir, args.expname + "/")
-    print(results_folder, flush=True)
-
+    results_folder = os.path.join(args.rootdir, args.expname, "results/")
     create_folder(results_folder)
     if args.no_reload:
         shutil.rmtree(results_folder)
