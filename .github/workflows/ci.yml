@@ -118,6 +118,11 @@ jobs:
         echo "Contents of nerf_synthetic directory:"
         ls -l preprocessed_data/nerf_synthetic
 
+    - name: List contents of nerf_llff_data directory
+      run: |
+        echo "Contents of nerf_llff_data directory:"
+        ls -lR preprocessed_data/nerf_llff_data
+
     - name: Verify presence of image files in nerf_llff_data directory
       run: |
         if ls preprocessed_data/nerf_llff_data/*/images/*.{png,jpg,jpeg} 1> /dev/null 2>&1; then
