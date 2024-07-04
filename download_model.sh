@@ -12,8 +12,8 @@ echo "Current working directory: $(pwd)"
 # Create the model directory if it does not exist
 mkdir -p ${MODEL_DIR}
 
-# Download the model file
-curl -L ${MODEL_URL} -o ${MODEL_PATH}
+# Download the model file with verbose output
+curl -L -v ${MODEL_URL} -o ${MODEL_PATH}
 
 # Check if the download was successful
 if [ -f "${MODEL_PATH}" ]; then
