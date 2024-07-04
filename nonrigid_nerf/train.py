@@ -1346,8 +1346,7 @@ def main_function(args):
     # Load data
 
     if args.dataset_type == "llff":
-        #images, poses, bds, render_poses, i_test = load_llff_data_multi_view(
-        images, poses, bds, render_poses, i_test = load_llff_data(
+        images, poses, bds, render_poses = load_llff_data(
             args.datadir, factor=args.factor
         )
         dataset_extras = _get_multi_view_helper_mappings(images.shape[0], args.datadir)
