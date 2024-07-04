@@ -93,6 +93,18 @@ jobs:
       run: |
         ls preprocessed_data
 
+    - name: List contents of nerf_llff_data directory
+      run: |
+        ls preprocessed_data/nerf_llff_data
+
+    - name: List contents of nerf_real_360 directory
+      run: |
+        ls preprocessed_data/nerf_real_360
+
+    - name: List contents of nerf_synthetic directory
+      run: |
+        ls preprocessed_data/nerf_synthetic
+
     - name: Verify images directory
       run: |
         if [ -d "preprocessed_data/images" ]; then
