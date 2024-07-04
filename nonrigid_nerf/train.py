@@ -1987,25 +1987,18 @@ def backup(results_folder):
         )
         for file in special_files_to_copy
     ]
-    # folders
+    # all files
     for subfolder in subfolders_to_copy:
-        create_folder(os.path.join(backup_folder, subfolder))
-        files = os.listdir(os.path.join(this_folder, subfolder))
-        files = [
-            file
-            for file in files
-            if os.path.isfile(os.path.join(this_folder, subfolder, file))
-            and file[file.rfind(".") :] in filetypes_to_copy
-        ]
-        [
-            shutil.copyfile(
-                os.path.join(this_folder, subfolder, file),
-                os.path.join(backup_folder, subfolder, file),
-            )
-            for file in files
-        ]
-
-    print("done.", flush=True)
+        folder = os.path.join(this_folder, subfolder)
+        for filetype in filetypes_to_copy:
+            for file in glob.glob(folder + "*" + filetype):
+                shutil.copyfile(
+                    file,
+                    os.path.join(
+                        backup_folder, subfolder, os.path.split(file)[-1]
+                    ),
+                )
+    print("done")
 
 
 if __name__ == "__main__":
