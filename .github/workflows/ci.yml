@@ -74,7 +74,7 @@ jobs:
 
     - name: Wait for dataset extraction
       run: |
-        sleep 30
+        sleep 60
 
     - name: Verify dataset download
       run: |
