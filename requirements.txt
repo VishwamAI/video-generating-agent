@@ -1,1 +1,7 @@
 moviepy
+basicsr==1.4.2
+torch
+opencv-python
+transformers
+torchvision
+matplotlib
