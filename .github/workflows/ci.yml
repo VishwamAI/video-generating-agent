@@ -45,6 +45,9 @@ jobs:
       run: |
         chmod +x download_model.sh
         ./download_model.sh
+        echo "Current working directory: $(pwd)"
+        echo "Contents of models directory:"
+        ls -l models
 
     - name: Verify model download
       run: |
