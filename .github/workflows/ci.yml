@@ -64,22 +64,20 @@ jobs:
         KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
         KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
       run: |
-        kaggle datasets download -d rsrishav/youtube-trending-video-dataset -p preprocessed_data || exit 0
-        if [ -f "preprocessed_data/youtube-trending-video-dataset.zip" ]; then
-          unzip preprocessed_data/youtube-trending-video-dataset.zip -d preprocessed_data
-          mkdir -p preprocessed_data/images
-          mv preprocessed_data/youtube-trending-video-dataset/* preprocessed_data/images/
+        kaggle datasets download -d sauravmaheshkar/nerf-dataset -p preprocessed_data --unzip
+        if [ -d "preprocessed_data/nerf_llff_data" ] || [ -d "preprocessed_data/nerf_real_360" ] || [ -d "preprocessed_data/nerf_synthetic" ]; then
+          echo "Dataset directories exist."
         else
-          echo "Dataset download failed or file not found."
+          echo "Dataset directories do not exist."
           exit 1
         fi
 
     - name: Verify dataset download
       run: |
-        if [ -d "preprocessed_data/images" ] && [ "$(ls -A preprocessed_data/images)" ]; then
-          echo "Dataset directory exists and is not empty."
+        if [ -d "preprocessed_data/nerf_llff_data" ] || [ -d "preprocessed_data/nerf_real_360" ] || [ -d "preprocessed_data/nerf_synthetic" ]; then
+          echo "Dataset directories exist and are not empty."
         else
-          echo "Dataset directory does not exist or is empty."
+          echo "Dataset directories do not exist or are empty."
           exit 1
         fi
 
