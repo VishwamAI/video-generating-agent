@@ -53,6 +53,7 @@ jobs:
         else
           echo "Model file does not exist."
           exit 1
+        fi
 
     - name: Install Kaggle CLI
       run: |
@@ -73,6 +74,7 @@ jobs:
         else
           echo "Dataset directories do not exist."
           exit 1
+        fi
 
     - name: List contents of preprocessed_data directory after download
       run: |
@@ -89,6 +91,7 @@ jobs:
         else
           echo "Dataset directories do not exist or are empty."
           exit 1
+        fi
 
     - name: List contents of preprocessed_data directory
       run: |
@@ -113,6 +116,7 @@ jobs:
         else
           echo "Image files do not exist in nerf_llff_data directory."
           exit 1
+        fi
 
     - name: Train model
       run: |
