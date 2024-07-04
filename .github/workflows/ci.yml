@@ -87,11 +87,13 @@ jobs:
 
     - name: Download dataset from Kaggle
       run: |
+        echo "Starting dataset download from Kaggle..."
         kaggle datasets download -d sauravmaheshkar/nerf-dataset -p preprocessed_data
         if [ $? -ne 0 ]; then
           echo "Failed to download dataset from Kaggle."
           exit 1
         fi
+        echo "Dataset download complete."
         echo "Contents of preprocessed_data directory after download:"
         ls -l preprocessed_data
         echo "Contents of nerf-dataset.zip:"
@@ -99,11 +101,13 @@ jobs:
 
     - name: Unzip dataset
       run: |
+        echo "Starting dataset unzip..."
         unzip -o preprocessed_data/nerf-dataset.zip -d preprocessed_data
         if [ $? -ne 0 ]; then
           echo "Failed to unzip dataset."
           exit 1
         fi
+        echo "Dataset unzip complete."
         echo "Contents of preprocessed_data directory after unzip:"
         ls -l preprocessed_data
         echo "Contents of nerf_llff_data directory after unzip:"
@@ -141,6 +145,7 @@ jobs:
 
     - name: Verify dataset download
       run: |
+        echo "Verifying dataset download..."
         if [ -d "preprocessed_data/nerf_llff_data" ] || [ -d "preprocessed_data/nerf_real_360" ] || [ -d "preprocessed_data/nerf_synthetic" ]; then
           echo "Dataset directories exist and are not empty."
         else
@@ -150,12 +155,12 @@ jobs:
 
     - name: List contents of preprocessed_data directory
       run: |
-        echo "Contents of preprocessed_data directory:"
+        echo "Listing contents of preprocessed_data directory:"
         ls -l preprocessed_data
 
     - name: List contents of nerf_llff_data subdirectories
       run: |
-        echo "Contents of nerf_llff_data subdirectories:"
+        echo "Listing contents of nerf_llff_data subdirectories:"
         ls -lR preprocessed_data/nerf_llff_data
 
     - name: List all subdirectories within nerf_llff_data
@@ -165,26 +170,27 @@ jobs:
 
     - name: List contents of nerf_llff_data directory
       run: |
-        echo "Contents of nerf_llff_data directory:"
+        echo "Listing contents of nerf_llff_data directory:"
         ls -l preprocessed_data/nerf_llff_data
 
     - name: List contents of nerf_real_360 directory
       run: |
-        echo "Contents of nerf_real_360 directory:"
+        echo "Listing contents of nerf_real_360 directory:"
         ls -l preprocessed_data/nerf_real_360
 
     - name: List contents of nerf_synthetic directory
       run: |
-        echo "Contents of nerf_synthetic directory:"
+        echo "Listing contents of nerf_synthetic directory:"
         ls -l preprocessed_data/nerf_synthetic
 
     - name: List contents of images directories in nerf_llff_data
       run: |
-        echo "Contents of images directories in nerf_llff_data:"
+        echo "Listing contents of images directories in nerf_llff_data:"
         ls -l preprocessed_data/nerf_llff_data/trex/images/
 
     - name: Verify presence of image files in nerf_llff_data directory
       run: |
+        echo "Verifying presence of image files in nerf_llff_data directory..."
         if find preprocessed_data/nerf_llff_data -type f \( -name "*.png" -o -name "*.jpg" -o -name "*.jpeg" \) | grep -q .; then
           echo "Image files exist in nerf_llff_data directory."
         else
