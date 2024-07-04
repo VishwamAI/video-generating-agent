@@ -103,6 +103,11 @@ jobs:
         echo "Contents of preprocessed_data directory:"
         ls -l preprocessed_data
 
+    - name: List contents of nerf_llff_data subdirectories
+      run: |
+        echo "Contents of nerf_llff_data subdirectories:"
+        ls -lR preprocessed_data/nerf_llff_data/nerf_llff_data
+
     - name: List all subdirectories within nerf_llff_data
       run: |
         echo "Listing all subdirectories within nerf_llff_data:"
