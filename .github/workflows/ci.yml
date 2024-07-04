@@ -32,7 +32,7 @@ jobs:
     - name: Verify installation
       run: |
         pip list
-        python -c "import torchvision.transforms.functional_tensor"
+        python -c "import torchvision.transforms.functional as F; print(F.rgb_to_grayscale)"
 
     - name: Set PYTHONPATH
       run: |
