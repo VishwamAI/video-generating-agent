@@ -1,9 +1,9 @@
 moviepy
 basicsr==1.4.2
-torch>=1.7
+torch==1.8.1
+torchvision==0.9.1
 opencv-python
 transformers
-torchvision
 matplotlib
 addict
 future
