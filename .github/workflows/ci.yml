@@ -41,6 +41,11 @@ jobs:
       run: |
         echo "PYTHONPATH=$PYTHONPATH:/home/runner/work/video-generating-agent/video-generating-agent/nonrigid_nerf" >> $GITHUB_ENV
 
+    - name: Download pre-trained model
+      run: |
+        chmod +x download_model.sh
+        ./download_model.sh
+
     - name: Run tests
       run: |
         python -m unittest discover -s tests
