@@ -48,7 +48,7 @@ jobs:
 
     - name: Verify model download
       run: |
-        if [ -f "models/RealESRGAN_x4plus.pth" ]; then
+        if [ -f "models/RealESRGANv2-animevideo-xsx4.pth" ]; then
           echo "Model file exists."
         else
           echo "Model file does not exist."
