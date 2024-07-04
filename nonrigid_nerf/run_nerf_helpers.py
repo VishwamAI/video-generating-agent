@@ -13,7 +13,7 @@ def load_llff_data(basedir, factor=8):
         imgfiles = [os.path.join(imgdir, f) for f in sorted(os.listdir(imgdir)) if f.endswith('.png')]
         if not imgfiles:
             raise FileNotFoundError("No image files found in the specified directory.")
-        images = [imageio.imread(f) / 255.0 for f in imgfiles]
+        images = [imageio.v2.imread(f) / 255.0 for f in imgfiles]
         images = np.stack(images, axis=0)
 
         # Downsample images if necessary
@@ -45,7 +45,7 @@ def gen_poses(basedir):
         imgfiles = [os.path.join(imgdir, f) for f in sorted(os.listdir(imgdir)) if f.endswith('.png')]
         if not imgfiles:
             raise FileNotFoundError("No image files found in the specified directory.")
-        images = [imageio.imread(f) / 255.0 for f in imgfiles]
+        images = [imageio.v2.imread(f) / 255.0 for f in imgfiles]
         images = np.stack(images, axis=0)
 
         # Estimate camera parameters
