@@ -6,6 +6,9 @@ MODEL_URL="https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.5.0/Rea
 MODEL_DIR="models"
 MODEL_PATH="${MODEL_DIR}/RealESRGAN_x4plus.pth"
 
+# Print the current working directory
+echo "Current working directory: $(pwd)"
+
 # Create the model directory if it does not exist
 mkdir -p ${MODEL_DIR}
 
@@ -15,6 +18,8 @@ curl -L ${MODEL_URL} -o ${MODEL_PATH}
 # Check if the download was successful
 if [ -f "${MODEL_PATH}" ]; then
     echo "Model downloaded to ${MODEL_PATH}"
+    # List the contents of the model directory
+    ls -l ${MODEL_DIR}
 else
     echo "Error: Model download failed"
     exit 1
