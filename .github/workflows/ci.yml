@@ -55,6 +55,10 @@ jobs:
           exit 1
         fi
 
+    - name: Install Kaggle CLI
+      run: |
+        pip install kaggle
+
     - name: Download dataset from Kaggle
       env:
         KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
