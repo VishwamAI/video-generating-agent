@@ -2,9 +2,9 @@
 
 # Script to download the pre-trained model file for Real-ESRGAN
 
-MODEL_URL="https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.5.0/RealESRGAN_x4plus.pth"
+MODEL_URL="https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.3.0/RealESRGANv2-animevideo-xsx4.pth"
 MODEL_DIR="models"
-MODEL_PATH="${MODEL_DIR}/RealESRGAN_x4plus.pth"
+MODEL_PATH="${MODEL_DIR}/RealESRGANv2-animevideo-xsx4.pth"
 
 # Print the current working directory
 echo "Current working directory: $(pwd)"
