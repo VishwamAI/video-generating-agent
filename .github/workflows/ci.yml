@@ -73,6 +73,8 @@ jobs:
       env:
         KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
         KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
+
+    - name: Download dataset from Kaggle
       run: |
         kaggle datasets download -d sauravmaheshkar/nerf-dataset -p preprocessed_data
         if [ $? -ne 0 ]; then
@@ -83,6 +85,9 @@ jobs:
         ls -l preprocessed_data
         echo "Contents of nerf-dataset.zip:"
         unzip -l preprocessed_data/nerf-dataset.zip
+
+    - name: Unzip dataset
+      run: |
         unzip -o preprocessed_data/nerf-dataset.zip -d preprocessed_data
         if [ $? -ne 0 ]; then
           echo "Failed to unzip dataset."
