@@ -67,11 +67,12 @@ jobs:
         KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
         KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
       run: |
-        kaggle datasets download -d sauravmaheshkar/nerf-dataset -p preprocessed_data --unzip
+        kaggle datasets download -d sauravmaheshkar/nerf-dataset -p preprocessed_data
         if [ $? -ne 0 ]; then
           echo "Failed to download dataset from Kaggle."
           exit 1
         fi
+        unzip -o preprocessed_data/nerf-dataset.zip -d preprocessed_data
         if [ -d "preprocessed_data/nerf_llff_data" ] || [ -d "preprocessed_data/nerf_real_360" ] || [ -d "preprocessed_data/nerf_synthetic" ]; then
           echo "Dataset directories exist."
         else
