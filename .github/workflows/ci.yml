@@ -81,7 +81,8 @@ jobs:
 
     - name: List contents of preprocessed_data directory after download
       run: |
-        ls preprocessed_data
+        echo "Contents of preprocessed_data directory after download:"
+        ls -l preprocessed_data
 
     - name: Wait for dataset extraction
       run: |
@@ -98,19 +99,23 @@ jobs:
 
     - name: List contents of preprocessed_data directory
       run: |
-        ls preprocessed_data
+        echo "Contents of preprocessed_data directory:"
+        ls -l preprocessed_data
 
     - name: List contents of nerf_llff_data directory
       run: |
-        ls preprocessed_data/nerf_llff_data
+        echo "Contents of nerf_llff_data directory:"
+        ls -l preprocessed_data/nerf_llff_data
 
     - name: List contents of nerf_real_360 directory
       run: |
-        ls preprocessed_data/nerf_real_360
+        echo "Contents of nerf_real_360 directory:"
+        ls -l preprocessed_data/nerf_real_360
 
     - name: List contents of nerf_synthetic directory
       run: |
-        ls preprocessed_data/nerf_synthetic
+        echo "Contents of nerf_synthetic directory:"
+        ls -l preprocessed_data/nerf_synthetic
 
     - name: Verify presence of image files in nerf_llff_data directory
       run: |
