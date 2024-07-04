@@ -74,6 +74,8 @@ jobs:
         fi
         echo "Contents of preprocessed_data directory after download:"
         ls -l preprocessed_data
+        echo "Contents of nerf-dataset.zip:"
+        unzip -l preprocessed_data/nerf-dataset.zip
         unzip -o preprocessed_data/nerf-dataset.zip -d preprocessed_data
         if [ $? -ne 0 ]; then
           echo "Failed to unzip dataset."
