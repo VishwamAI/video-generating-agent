@@ -94,7 +94,7 @@ jobs:
     - name: Wait for dataset extraction
       run: |
         for i in {1..60}; do
-          if [ -d "preprocessed_data/nerf_llff_data/nerf_llff_data/trex/images" ]; then
+          if [ -d "preprocessed_data/nerf_llff_data/trex/images" ]; then
             echo "Dataset extraction complete."
             break
           else
@@ -106,7 +106,7 @@ jobs:
             sleep 10
           fi
         done
-        if [ ! -d "preprocessed_data/nerf_llff_data/nerf_llff_data/trex/images" ]; then
+        if [ ! -d "preprocessed_data/nerf_llff_data/trex/images" ]; then
           echo "Dataset extraction failed."
           exit 1
         fi
