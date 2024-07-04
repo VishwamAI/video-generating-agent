@@ -58,6 +58,11 @@ jobs:
           exit 1
         fi
 
+    - name: Create kaggle.json file
+      run: |
+        echo "{\"username\":\"${{ secrets.KAGGLE_USERNAME }}\",\"key\":\"${{ secrets.KAGGLE_KEY }}\"}" > ~/.kaggle/kaggle.json
+        chmod 600 ~/.kaggle/kaggle.json
+
     - name: Install Kaggle CLI
       run: |
         pip install kaggle
@@ -73,11 +78,6 @@ jobs:
       env:
         KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
         KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
-
-    - name: Create kaggle.json file
-      run: |
-        echo "{\"username\":\"${{ secrets.KAGGLE_USERNAME }}\",\"key\":\"${{ secrets.KAGGLE_KEY }}\"}" > ~/.kaggle/kaggle.json
-        chmod 600 ~/.kaggle/kaggle.json
 
     - name: Download dataset from Kaggle
       run: |
