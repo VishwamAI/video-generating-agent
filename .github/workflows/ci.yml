@@ -87,7 +87,19 @@ jobs:
 
     - name: Wait for dataset extraction
       run: |
-        sleep 120
+        for i in {1..30}; do
+          if [ -d "preprocessed_data/nerf_llff_data/trex/images" ]; then
+            echo "Dataset extraction complete."
+            break
+          else
+            echo "Waiting for dataset extraction..."
+            sleep 10
+          fi
+        done
+        if [ ! -d "preprocessed_data/nerf_llff_data/trex/images" ]; then
+          echo "Dataset extraction failed."
+          exit 1
+        fi
 
     - name: Verify dataset download
       run: |
