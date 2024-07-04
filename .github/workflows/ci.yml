@@ -72,7 +72,15 @@ jobs:
           echo "Failed to download dataset from Kaggle."
           exit 1
         fi
+        echo "Contents of preprocessed_data directory after download:"
+        ls -l preprocessed_data
         unzip -o preprocessed_data/nerf-dataset.zip -d preprocessed_data
+        if [ $? -ne 0 ]; then
+          echo "Failed to unzip dataset."
+          exit 1
+        fi
+        echo "Contents of preprocessed_data directory after unzip:"
+        ls -l preprocessed_data
         if [ -d "preprocessed_data/nerf_llff_data" ] || [ -d "preprocessed_data/nerf_real_360" ] || [ -d "preprocessed_data/nerf_synthetic" ]; then
           echo "Dataset directories exist."
         else
