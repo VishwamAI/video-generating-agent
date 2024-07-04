@@ -81,6 +81,10 @@ jobs:
           exit 1
         fi
 
+    - name: List contents of preprocessed_data directory
+      run: |
+        ls preprocessed_data
+
     - name: Verify images directory
       run: |
         if [ -d "preprocessed_data/images" ]; then
