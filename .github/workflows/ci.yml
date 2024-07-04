@@ -55,6 +55,10 @@ jobs:
           exit 1
         fi
 
+    - name: Train model
+      run: |
+        python nonrigid_nerf/train.py --config nonrigid_nerf/configs/training_config.txt
+
     - name: Run tests
       run: |
         python -m unittest discover -s tests
