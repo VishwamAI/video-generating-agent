@@ -17,3 +17,4 @@ scipy
 tb-nightly
 tqdm
 yapf
+realesrgan
