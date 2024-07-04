@@ -105,6 +105,15 @@ jobs:
       run: |
         ls preprocessed_data/nerf_synthetic
 
+    - name: Verify presence of image files in nerf_llff_data directory
+      run: |
+        if ls preprocessed_data/nerf_llff_data/*.png 1> /dev/null 2>&1; then
+          echo "Image files exist in nerf_llff_data directory."
+        else
+          echo "Image files do not exist in nerf_llff_data directory."
+          exit 1
+        fi
+
     - name: Train model
       run: |
         python nonrigid_nerf/train.py --config nonrigid_nerf/configs/training_config.txt
