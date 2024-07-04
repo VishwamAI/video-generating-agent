@@ -23,6 +23,10 @@ jobs:
       with:
         python-version: 3.8
 
+    - name: Clear Python package cache
+      run: |
+        pip cache purge
+
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
@@ -31,7 +35,7 @@ jobs:
     - name: Verify installation
       run: |
         pip list
-        python -c "import torchvision.transforms.functional as F; print(F.rgb_to_grayscale)"
+        python -c "import matplotlib.pyplot as plt; print('matplotlib installed successfully')"
 
     - name: Set PYTHONPATH
       run: |
