@@ -12,4 +12,10 @@ mkdir -p ${MODEL_DIR}
 # Download the model file
 curl -L ${MODEL_URL} -o ${MODEL_PATH}
 
-echo "Model downloaded to ${MODEL_PATH}"
+# Check if the download was successful
+if [ -f "${MODEL_PATH}" ]; then
+    echo "Model downloaded to ${MODEL_PATH}"
+else
+    echo "Error: Model download failed"
+    exit 1
+fi
