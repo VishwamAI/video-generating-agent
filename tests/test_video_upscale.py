@@ -18,12 +18,6 @@ class TestVideoUpscale(unittest.TestCase):
                 cap.write(np.zeros((64, 64, 3), dtype=np.uint8))
             cap.release()
 
-        # Ensure the model path exists for testing
-        if not os.path.exists(self.model_path):
-            os.makedirs(os.path.dirname(self.model_path), exist_ok=True)
-            with open(self.model_path, 'w') as f:
-                f.write('')
-
     def test_upscale_video(self):
         upscale_video(self.input_video, self.output_video, self.model_path, self.scale)
         self.assertTrue(os.path.exists(self.output_video))
