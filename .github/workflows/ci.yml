@@ -113,10 +113,10 @@ jobs:
           echo "Failed to unzip dataset."
           exit 1
         fi
+        echo "Contents of preprocessed_data directory after unzip:"
+        ls -l preprocessed_data
         if [ -d "preprocessed_data/nerf_llff_data" ]; then
           echo "Dataset unzip complete."
-          echo "Contents of preprocessed_data directory after unzip:"
-          ls -l preprocessed_data
           echo "Contents of nerf_llff_data directory after unzip:"
           ls -l preprocessed_data/nerf_llff_data
         else
