@@ -122,6 +122,8 @@ jobs:
           echo "Dataset unzip complete."
           echo "Contents of nerf_llff_data directory after unzip:"
           ls -l preprocessed_data/nerf_llff_data
+          echo "Contents of nerf_llff_data/trex directory after unzip:"
+          ls -l preprocessed_data/nerf_llff_data/trex
         else
           echo "nerf_llff_data directory does not exist."
           exit 1
