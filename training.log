@@ -4,3 +4,10 @@
 2024-06-19 17:51:06,986 - WARNING - /home/ubuntu/.local/lib/python3.10/site-packages/huggingface_hub/file_download.py:1132: FutureWarning: `resume_download` is deprecated and will be removed in version 1.0.0. Downloads always resume when possible. If you want to force a new download, use `force_download=True`.
   warnings.warn(
 
+2024-07-05 14:46:44,370 - WARNING - File not found: /home/ubuntu/video-generating-agent/nonrigid_nerf/load_llff.py. Skipping copy operation.
+2024-07-05 14:46:44,371 - WARNING - File not found: /home/ubuntu/video-generating-agent/nonrigid_nerf/run_nerf_helpers.py. Skipping copy operation.
+2024-07-05 14:46:44,371 - WARNING - File not found: /home/ubuntu/video-generating-agent/nonrigid_nerf/__init__.py. Skipping copy operation.
+2024-07-05 14:46:44,371 - WARNING - File not found: /home/ubuntu/video-generating-agent/nonrigid_nerf/train.py. Skipping copy operation.
+2024-07-05 14:46:44,372 - WARNING - File not found: /home/ubuntu/video-generating-agent/nonrigid_nerf/llff_preprocessing/colmap_read_model.py. Skipping copy operation.
+2024-07-05 14:46:44,372 - WARNING - File not found: /home/ubuntu/video-generating-agent/nonrigid_nerf/llff_preprocessing/pose_utils.py. Skipping copy operation.
+2024-07-05 14:46:44,372 - WARNING - File not found: /home/ubuntu/video-generating-agent/nonrigid_nerf/llff_preprocessing/colmap_wrapper.py. Skipping copy operation.
