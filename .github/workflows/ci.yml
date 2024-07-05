@@ -221,7 +221,7 @@ jobs:
         fi
     - name: Train model
       run: |
-        python nonrigid_nerf/train.py --config nonrigid_nerf/configs/training_config.txt
+        python nonrigid_nerf/train.py --config nonrigid_nerf/configs/training_config.txt --datadir preprocessed_data/nerf_llff_data
 
     - name: Run tests
       run: |
