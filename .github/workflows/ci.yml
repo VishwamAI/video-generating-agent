@@ -58,20 +58,7 @@ jobs:
           exit 1
         fi
 
-    - name: Create kaggle.json file
-      run: |
-        mkdir -p ~/.kaggle
-        if [ -d ~/.kaggle ]; then
-          echo "{\"username\":\"${{ secrets.KAGGLE_USERNAME }}\",\"key\":\"${{ secrets.KAGGLE_KEY }}\"}" > ~/.kaggle/kaggle.json
-          chmod 600 ~/.kaggle/kaggle.json
-          echo "kaggle.json file created successfully."
-        else
-          echo "Failed to create .kaggle directory."
-          exit 1
-        fi
-      env:
-        KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
-        KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
+    # Removed redundant step to create kaggle.json file
 
     - name: Install Kaggle CLI
       run: |
