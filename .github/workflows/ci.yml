@@ -144,6 +144,8 @@ jobs:
             ls -l preprocessed_data
             echo "Current contents of nerf_llff_data directory:"
             ls -l preprocessed_data/nerf_llff_data
+            echo "Current contents of nerf_llff_data/trex directory:"
+            ls -l preprocessed_data/nerf_llff_data/trex
             sleep 15
           fi
         done
@@ -153,7 +155,10 @@ jobs:
           ls -l preprocessed_data
           echo "Final contents of nerf_llff_data directory:"
           ls -l preprocessed_data/nerf_llff_data
+          echo "Final contents of nerf_llff_data/trex directory:"
+          ls -l preprocessed_data/nerf_llff_data/trex
           exit 1
+        fi
 
     - name: Verify dataset download
       run: |
