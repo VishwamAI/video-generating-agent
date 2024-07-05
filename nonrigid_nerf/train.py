@@ -50,6 +50,13 @@ def ndc_rays(H, W, focal, near, rays_o, rays_d):
 
     return rays_o_ndc, rays_d_ndc
 
+def load_images(scene_dir):
+    image_dir = os.path.join(scene_dir, 'images')
+    image_files = glob.glob(os.path.join(image_dir, '*.JPG'))
+    if not image_files:
+        raise FileNotFoundError(f"No image files found in {image_dir}")
+    return image_files
+
 def batchify(fn, chunk, detailed_output=False):
     """Constructs a version of 'fn' that applies to smaller batches."""
     if chunk is None:
