@@ -68,6 +68,14 @@ jobs:
         ls -l ~/.kaggle
         echo "Contents of kaggle.json file:"
         cat ~/.kaggle/kaggle.json
+        if [ ! -f ~/.kaggle/kaggle.json ]; then
+          echo "kaggle.json file was not created."
+          exit 1
+        fi
+        if ! grep -q '"username":"' ~/.kaggle/kaggle.json; then
+          echo "kaggle.json file does not contain the expected content."
+          exit 1
+        fi
 
     - name: Download dataset from Kaggle
       env:
