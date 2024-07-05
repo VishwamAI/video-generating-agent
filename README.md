@@ -38,8 +38,8 @@ The `video-generating-agent` project aims to generate videos using advanced neur
    Place your `kaggle.json` file in the `~/.kaggle` directory. Ensure it contains the following:
    ```json
    {
-     "username": "kasinadhsarma1",
-     "key": "5df3fbdf09edab914b50663965c9f4f2"
+     "username": "your_kaggle_username",
+     "key": "your_kaggle_key"
    }
    ```
 
@@ -49,7 +49,7 @@ The `video-generating-agent` project aims to generate videos using advanced neur
 
 1. Preprocess the dataset:
    ```bash
-   python preprocess.py --input data/example_sequence/
+   python preprocess.py --input data/example_sequence/ --output preprocessed_data/
    ```
 
 ### Training
