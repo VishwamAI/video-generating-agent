@@ -64,13 +64,6 @@ jobs:
       run: |
         pip install kaggle
         echo "Kaggle CLI installed successfully."
-        echo "Checking for kaggle.json file..."
-        if [ -f ~/.kaggle/kaggle.json ]; then
-          echo "kaggle.json file exists."
-        else
-          echo "kaggle.json file does not exist."
-          exit 1
-        fi
       env:
         KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
         KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
