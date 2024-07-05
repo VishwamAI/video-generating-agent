@@ -28,4 +28,8 @@ if __name__ == "__main__":
     # Corrected the input directory path
     args.input = args.input.replace('nerf_llff_data/nerf_llff_data', 'nerf_llff_data')
 
+    # Update the input directory path to match the actual directory structure
+    if 'trex' in args.input:
+        args.input = 'preprocessed_data/nerf_llff_data/trex'
+
     preprocess_images(args.input, args.output)
