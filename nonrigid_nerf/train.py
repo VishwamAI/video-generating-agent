@@ -1281,76 +1281,13 @@ def _get_multi_view_helper_mappings(num_images, datadir):
     
   
 def get_full_resolution_intrinsics(args, dataset_extras):
-
-    intrinsics = {} # intrinsics[raw_view] = {"center_x": ..., "center_y": ..., "focal_x": ..., "focaly_y": ..., "height": ..., "width": ...}
-
-    if dataset_extras["is_multiview"]: # multi-view
-        image_folder = "images"
-        import json
-        with open(os.path.join(args.datadir, "calibration_averaged_camera_view.json"), "r") as json_file:
-            calibration = json.load(json_file)
-
-        for raw_view in calibration.keys():
-            if raw_view in ["focal", "height", "width", "min_bound", "max_bound"]:
-                continue
-
-            camera = {
-                "height": calibration[raw_view]["height"],
-                "width": calibration[raw_view]["width"],
-                "focal_x": calibration[raw_view]["focal_x"],
-                "focal_y": calibration[raw_view]["focal_y"],
-                "center_x": calibration[raw_view]["center_x"],
-                "center_y": calibration[raw_view]["center_y"],
-                }
-
-            intrinsics[raw_view] = camera
-
-    else: # monocular
-        def _get_info(image_folder):
-            dataset_dirs = ['nerf_llff_data', 'nerf_real_360', 'nerf_synthetic']
-            imgdir = None
-            for d in dataset_dirs:
-                potential_dir = os.path.join('./preprocessed_data', d)
-                if os.path.exists(potential_dir):
-                    imgdir = potential_dir
-                    break
-            if imgdir is None:
-                raise FileNotFoundError(f"No valid dataset directory found. Please ensure the dataset is correctly placed in one of the following directories: {', '.join(dataset_dirs)}.")
-            imgnames = [f for f in sorted(os.listdir(imgdir)) if f.endswith('JPG') or f.endswith('jpg') or f.endswith('png')]
-            if not imgnames:
-                raise FileNotFoundError(f"No image files found in directory: {imgdir}.")
-            imgfiles = [os.path.join(imgdir, f) for f in imgnames]
-            def imread(f):
-                return imageio.v2.imread(f, ignoregamma=True) if f[-4:] == ".png" else imageio.v2.imread(f)
-            height, width, _ = imread(imgfiles[0]).shape
-            return imgfiles, height, width
-
-        scene_subdirs = ["fern", "flower", "fortress", "horns", "leaves", "orchids", "room", "trex"]
-        for subdir in scene_subdirs:
-            image_folder = os.path.join(args.datadir, subdir, "images")
-            if os.path.exists(image_folder):
-                imgfiles, height, width = _get_info(image_folder)
-                return imgfiles, height, width
-        raise FileNotFoundError(f"No image files found in any of the scene subdirectories: {scene_subdirs}.")
-
-        image_folder = "images"
-        imgfiles, height, width = _get_info(image_folder)
-        center_x = width / 2
-        center_y = height / 2
-        focal_x = None
-        focal_y = None
-
-        # duplicate to all images
-        one_camera = {"height": height, "width": width, "focal_x": focal_x, "focal_y": focal_y, "center_x": center_x, "center_y": center_y}
-        raw_views = np.arange(len(imgfiles))
-        for raw_view in raw_views:
-            intrinsics[raw_view] = one_camera.copy()
-
-    # take care of common values
-    for camera in intrinsics.values():
-        camera["ray_bending_latent_size"] = args.ray_bending_latent_size
-
-    return intrinsics, image_folder
+    scene_subdirs = ['fern', 'flower', 'fortress', 'horns', 'leaves', 'orchids', 'room', 'trex']
+    for scene in scene_subdirs:
+        image_folder = os.path.join(args.datadir, scene, 'images')
+        if os.path.exists(image_folder) and len(os.listdir(image_folder)) > 0:
+            intrinsics = load_intrinsics(os.path.join(args.datadir, scene))
+            return intrinsics, image_folder
+    raise FileNotFoundError(f"No image files found in any of the scene subdirectories: {scene_subdirs}.")
 
 
 def main_function(args):
