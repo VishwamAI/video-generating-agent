@@ -177,7 +177,7 @@ jobs:
 
     - name: Preprocess images
       run: |
-        python nonrigid_nerf/preprocess.py --input preprocessed_data/nerf_llff_data/trex/images --output preprocessed_data/nerf_llff_data/preprocessed_images
+        python nonrigid_nerf/preprocess.py --input preprocessed_data/nerf_llff_data/trex/images --output preprocessed_data/nerf_llff_data/trex
 
     - name: List contents of preprocessed_data directory
       run: |
