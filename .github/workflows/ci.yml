@@ -58,7 +58,11 @@ jobs:
           exit 1
         fi
 
-    # Removed redundant step to create kaggle.json file
+    - name: Copy kaggle.json to runner's home directory
+      run: |
+        mkdir -p ~/.kaggle
+        cp .kaggle/kaggle.json ~/.kaggle/
+        chmod 600 ~/.kaggle/kaggle.json
 
     - name: Install Kaggle CLI
       run: |
