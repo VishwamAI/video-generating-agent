@@ -58,11 +58,7 @@ jobs:
           exit 1
         fi
 
-    - name: Copy kaggle.json to runner's home directory
-      run: |
-        mkdir -p ~/.kaggle
-        cp .kaggle/kaggle.json ~/.kaggle/
-        chmod 600 ~/.kaggle/kaggle.json
+    # Removed the step that copies kaggle.json to the runner's home directory
 
     - name: Install Kaggle CLI
       run: |
