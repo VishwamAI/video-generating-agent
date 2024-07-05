@@ -23,6 +23,10 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
     logging.StreamHandler()
 ])
 
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import shutil
+
 from nonrigid_nerf.run_nerf_helpers import *
 from scripts.text_encoder import TextEncoder
 #from nonrigid_nerf.load_llff import load_llff_data_multi_view
@@ -31,6 +35,74 @@ from nonrigid_nerf.load_llff import load_llff_data
 
 device = torch.device("cpu")
 DEBUG = True  # gets overwritten by args.debug
+
+def get_embedder(multires, i=0):
+    if i == -1:
+        return nn.Identity(), 3
+
+    embed_fns = []
+    out_dim = 0
+    for i in range(multires):
+        embed_fns.append(lambda x, p=i: torch.sin((2.0 ** p) * x))
+        embed_fns.append(lambda x, p=i: torch.cos((2.0 ** p) * x))
+        out_dim += 2
+
+    def embed(x):
+        return torch.cat([fn(x) for fn in embed_fns], -1)
+
+    return embed, out_dim
+
+class NeRF(nn.Module):
+    def __init__(self, D=8, W=256, input_ch=3, output_ch=4, skips=[4], input_ch_views=0, use_viewdirs=False, ray_bender=None, ray_bending_latent_size=32, embeddirs_fn=None, num_ray_samples=64, approx_nonrigid_viewdirs=False, time_conditioned_baseline=False):
+        super(NeRF, self).__init__()
+        self.D = D
+        self.W = W
+        self.input_ch = input_ch
+        self.output_ch = output_ch
+        self.skips = skips
+        self.input_ch_views = input_ch_views
+        self.use_viewdirs = use_viewdirs
+        self.ray_bender = ray_bender
+        self.ray_bending_latent_size = ray_bending_latent_size
+        self.embeddirs_fn = embeddirs_fn
+        self.num_ray_samples = num_ray_samples
+        self.approx_nonrigid_viewdirs = approx_nonrigid_viewdirs
+        self.time_conditioned_baseline = time_conditioned_baseline
+
+        self.pts_linears = nn.ModuleList(
+            [nn.Linear(input_ch, W)] + [nn.Linear(W, W) if i not in self.skips else nn.Linear(W + input_ch, W) for i in range(D - 1)]
+        )
+
+        self.views_linears = nn.ModuleList([nn.Linear(input_ch_views + W, W // 2)])
+
+        if use_viewdirs:
+            self.feature_linear = nn.Linear(W, W)
+            self.alpha_linear = nn.Linear(W, 1)
+            self.rgb_linear = nn.Linear(W // 2, 3)
+        else:
+            self.output_linear = nn.Linear(W, output_ch)
+
+    def forward(self, x):
+        input_pts, input_views = torch.split(x, [self.input_ch, self.input_ch_views], dim=-1)
+        h = input_pts
+        for i, l in enumerate(self.pts_linears):
+            h = F.relu(l(h))
+            if i in self.skips:
+                h = torch.cat([input_pts, h], -1)
+
+        if self.use_viewdirs:
+            alpha = self.alpha_linear(h)
+            feature = self.feature_linear(h)
+            h = torch.cat([feature, input_views], -1)
+            for l in self.views_linears:
+                h = F.relu(l(h))
+
+            rgb = self.rgb_linear(h)
+            outputs = torch.cat([rgb, alpha], -1)
+        else:
+            outputs = self.output_linear(h)
+
+        return outputs
 
 def ndc_rays(H, W, focal, near, rays_o, rays_d):
     """Convert ray origins and directions to normalized device coordinates (NDC)."""
@@ -349,7 +421,7 @@ class training_wrapper_class(torch.nn.Module):
 
 
 def get_parallelized_training_function(
-    coarse_model, latents, text_encoder, fine_model=None, ray_bender=None
+    coarse_model, latents, text_encoder, fine_model=None, ray_bender=None, ray_params=None
 ):
     return torch.nn.DataParallel(
         training_wrapper_class(
@@ -855,6 +927,28 @@ def raw2outputs(raw, z_vals, rays_d, raw_noise_std=0, white_bkgd=False, pytest=F
 
     return rgb_map, disp_map, acc_map, opacity_alpha, visibility_weights, depth_map
 
+for i, data in enumerate(train_dataloader):
+    rays_o, rays_d, target_s, batch_pixel_indices, ray_params = data
+    rays_o, rays_d, target_s = rays_o.to(device), rays_d.to(device), target_s.to(device)
+    ray_params = {k: v.to(device) if isinstance(v, torch.Tensor) else v for k, v in ray_params.items()}
+
+    optimizer.zero_grad()
+    loss = parallelized_training_function(
+        args,
+        rays_o,
+        rays_d,
+        i,
+        render_kwargs_train,
+        target_s,
+        global_step,
+        start,
+        dataset_extras,
+        batch_pixel_indices,
+        ray_params,  # Pass ray_params to the parallelized_training_function
+    )
+    loss.backward()
+    optimizer.step()
+
 
 def render_rays(
     ray_batch,
@@ -1037,6 +1131,7 @@ def config_parser():
     parser.add_argument(
         "--N_iters", type=int, default=200000, help="number of training iterations"
     )
+    parser.add_argument("--no_ndc", action='store_true', help="disable NDC transformation")  # Added default value for no_ndc
     parser.add_argument(
         "--N_rand",
         type=int,
@@ -1239,6 +1334,14 @@ def config_parser():
     )
 
     return parser
+
+def get_rays_np(pose, intrinsics):
+    H, W, focal = intrinsics['height'], intrinsics['width'], intrinsics['focal_x']
+    i, j = np.meshgrid(np.arange(W, dtype=np.float32), np.arange(H, dtype=np.float32), indexing='xy')
+    dirs = np.stack([(i - W * 0.5) / focal, -(j - H * 0.5) / focal, -np.ones_like(i)], -1)
+    rays_d = np.sum(dirs[..., np.newaxis, :] * pose[:3, :3], -1)
+    rays_o = np.broadcast_to(pose[:3, -1], np.shape(rays_d))
+    return rays_o, rays_d
 
 
 def _get_multi_view_helper_mappings(num_images, datadir):
@@ -1445,7 +1548,7 @@ def main_function(args):
         latent.requires_grad = True
 
     # Create nerf model
-    render_kwargs_train, render_kwargs_test, start, grad_vars, optimizer = create_nerf(
+    render_kwargs_train, render_kwargs_test, start, grad_vars, optimizer, text_encoder = create_nerf(
         args, autodecoder_variables=ray_bending_latents_list
     )
     print("start: " + str(start) + " args.N_iters: " + str(args.N_iters), flush=True)
@@ -1467,6 +1570,7 @@ def main_function(args):
     parallel_training = get_parallelized_training_function(
         coarse_model=coarse_model,
         latents=ray_bending_latents_list,
+        text_encoder=text_encoder,
         fine_model=fine_model,
         ray_bender=ray_bender,
     )
@@ -1474,9 +1578,7 @@ def main_function(args):
         coarse_model=coarse_model, fine_model=fine_model, ray_bender=ray_bender
     )  # only used by render_path() at test time, not for training/optimization
 
-    min_point, max_point = determine_nerf_volume_extent(
-        parallel_render, poses, [ intrinsics[dataset_extras["imageid_to_viewid"][imageid]] for imageid in range(poses.shape[0]) ], render_kwargs_train, args
-    )
+    min_point, max_point = determine_nerf_volume_extent(args, render_kwargs_train)
     scripts_dict["min_nerf_volume_point"] = min_point.detach().cpu().numpy().tolist()
     scripts_dict["max_nerf_volume_point"] = max_point.detach().cpu().numpy().tolist()
 
@@ -1943,6 +2045,14 @@ def main_function(args):
 
         global_step += 1
         print("", end="", flush=True)
+
+def determine_nerf_volume_extent(args, render_kwargs_train):
+    # Placeholder implementation for determining NeRF volume extent
+    # This function should calculate and return the min and max points of the volume
+    # For now, we return default values which can be refined later
+    min_point = torch.tensor([0.0, 0.0, 0.0])
+    max_point = torch.tensor([1.0, 1.0, 1.0])
+    return min_point, max_point
 
 
 def create_folder(folder):
