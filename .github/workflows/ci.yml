@@ -40,6 +40,25 @@ jobs:
     - name: Set PYTHONPATH
       run: |
         echo "PYTHONPATH=$PYTHONPATH:/home/runner/work/video-generating-agent/video-generating-agent/nonrigid_nerf" >> $GITHUB_ENV
+        echo "PYTHONPATH set to: $PYTHONPATH"
+        echo "Verifying presence of necessary files and directories:"
+        ls -l /home/runner/work/video-generating-agent/video-generating-agent/nonrigid_nerf
+        if [ ! -f /home/runner/work/video-generating-agent/video-generating-agent/nonrigid_nerf/train.py ]; then
+          echo "train.py not found."
+          exit 1
+        fi
+        if [ ! -f /home/runner/work/video-generating-agent/video-generating-agent/nonrigid_nerf/load_llff.py ]; then
+          echo "load_llff.py not found."
+          exit 1
+        fi
+        if [ ! -f /home/runner/work/video-generating-agent/video-generating-agent/nonrigid_nerf/run_nerf_helpers.py ]; then
+          echo "run_nerf_helpers.py not found."
+          exit 1
+        fi
+        if [ ! -f /home/runner/work/video-generating-agent/video-generating-agent/nonrigid_nerf/llff_preprocessing/pose_utils.py ]; then
+          echo "pose_utils.py not found."
+          exit 1
+        fi
 
     - name: Download pre-trained model
       run: |
