@@ -7,6 +7,7 @@ import json
 import time
 import random
 import logging
+import glob
 
 import numpy as np
 import imageio
@@ -1003,7 +1004,6 @@ def config_parser():
         "--config",
         is_config_file=True,
         help="config file path",
-        default=os.path.join(code_folder, "configs", "default.txt"),
     )
     parser.add_argument("--expname", type=str, help="experiment name")
     parser.add_argument("--datadir", type=str, help="input data directory")
@@ -1307,13 +1307,31 @@ def get_full_resolution_intrinsics(args, dataset_extras):
 
     else: # monocular
         def _get_info(image_folder):
-            imgdir = os.path.join(args.datadir, image_folder)
+            dataset_dirs = ['nerf_llff_data', 'nerf_real_360', 'nerf_synthetic']
+            imgdir = None
+            for d in dataset_dirs:
+                potential_dir = os.path.join('./preprocessed_data', d)
+                if os.path.exists(potential_dir):
+                    imgdir = potential_dir
+                    break
+            if imgdir is None:
+                raise FileNotFoundError(f"No valid dataset directory found. Please ensure the dataset is correctly placed in one of the following directories: {', '.join(dataset_dirs)}.")
             imgnames = [f for f in sorted(os.listdir(imgdir)) if f.endswith('JPG') or f.endswith('jpg') or f.endswith('png')]
+            if not imgnames:
+                raise FileNotFoundError(f"No image files found in directory: {imgdir}.")
             imgfiles = [os.path.join(imgdir, f) for f in imgnames]
             def imread(f):
                 return imageio.v2.imread(f, ignoregamma=True) if f[-4:] == ".png" else imageio.v2.imread(f)
             height, width, _ = imread(imgfiles[0]).shape
             return imgfiles, height, width
+
+        scene_subdirs = ["fern", "flower", "fortress", "horns", "leaves", "orchids", "room", "trex"]
+        for subdir in scene_subdirs:
+            image_folder = os.path.join(args.datadir, subdir, "images")
+            if os.path.exists(image_folder):
+                imgfiles, height, width = _get_info(image_folder)
+                return imgfiles, height, width
+        raise FileNotFoundError(f"No image files found in any of the scene subdirectories: {scene_subdirs}.")
 
         image_folder = "images"
         imgfiles, height, width = _get_info(image_folder)
@@ -1347,17 +1365,12 @@ def main_function(args):
     # Load data
 
     if args.dataset_type == "llff":
-        #images, poses, bds, render_poses, i_test = load_llff_data_multi_view(
-        images, poses, bds, render_poses, i_test = load_llff_data(
-            args.datadir,
-            factor=args.factor,
-            recenter=True,
-            bd_factor=args.bd_factor,
-            spherify=args.spherify,
+        images, poses, bds, render_poses = load_llff_data(
+            args.datadir, factor=args.factor
         )
         dataset_extras = _get_multi_view_helper_mappings(images.shape[0], args.datadir)
         intrinsics, image_folder = get_full_resolution_intrinsics(args, dataset_extras)
-        
+
         hwf = poses[0, :3, -1]
         poses = poses[:, :3, :4]
         print("Loaded llff", images.shape, render_poses.shape, hwf, args.datadir)
@@ -1974,7 +1987,7 @@ def create_folder(folder):
 
 def backup(results_folder):
     print("backing up... ", flush=True, end="")
-    special_files_to_copy = ["configs/default.txt"]  # ["specs.json"]
+    special_files_to_copy = []  # Removed reference to 'configs/default.txt'
     filetypes_to_copy = [".py"]
     subfolders_to_copy = ["", "llff_preprocessing/"]
 
@@ -1993,34 +2006,26 @@ def backup(results_folder):
         )
         for file in special_files_to_copy
     ]
-    # folders
+    # all files
     for subfolder in subfolders_to_copy:
-        create_folder(os.path.join(backup_folder, subfolder))
-        files = os.listdir(os.path.join(this_folder, subfolder))
-        files = [
-            file
-            for file in files
-            if os.path.isfile(os.path.join(this_folder, subfolder, file))
-            and file[file.rfind(".") :] in filetypes_to_copy
-        ]
-        [
-            shutil.copyfile(
-                os.path.join(this_folder, subfolder, file),
-                os.path.join(backup_folder, subfolder, file),
-            )
-            for file in files
-        ]
-
-    print("done.", flush=True)
+        folder = os.path.join(this_folder, subfolder)
+        if os.path.exists(folder):  # Check if the folder exists
+            for filetype in filetypes_to_copy:
+                for file in glob.glob(folder + "*" + filetype):
+                    src_file = os.path.join(folder, file)
+                    dest_file = os.path.join(backup_folder, file)
+                    if os.path.exists(src_file) and src_file != dest_file:
+                        shutil.copyfile(src_file, dest_file)
+                    else:
+                        logging.warning(f"File not found: {src_file}. Skipping copy operation.")
+    print("done")
 
 
 if __name__ == "__main__":
     parser = config_parser()
     args = parser.parse_args()
 
-    results_folder = os.path.join(args.rootdir, args.expname + "/")
-    print(results_folder, flush=True)
-
+    results_folder = os.path.join(args.rootdir, args.expname, "results/")
     create_folder(results_folder)
     if args.no_reload:
         shutil.rmtree(results_folder)

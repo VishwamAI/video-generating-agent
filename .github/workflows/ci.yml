@@ -23,19 +23,152 @@ jobs:
       with:
         python-version: 3.8
 
+    - name: Clear Python package cache
+      run: |
+        pip cache purge
+
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-        pip install torch opencv-python transformers basicsr torchvision
 
     - name: Verify installation
       run: |
         pip list
+        python -c "import matplotlib.pyplot as plt; print('matplotlib installed successfully')"
 
     - name: Set PYTHONPATH
       run: |
         echo "PYTHONPATH=$PYTHONPATH:/home/runner/work/video-generating-agent/video-generating-agent/nonrigid_nerf" >> $GITHUB_ENV
+
+    - name: Download pre-trained model
+      run: |
+        chmod +x download_model.sh
+        ./download_model.sh
+        echo "Current working directory: $(pwd)"
+        echo "Contents of models directory:"
+        ls -l models
+
+    - name: Verify model download
+      run: |
+        if [ -f "models/RealESRGANv2-animevideo-xsx4.pth" ]; then
+          echo "Model file exists."
+        else
+          echo "Model file does not exist."
+          exit 1
+        fi
+
+    - name: Install Kaggle CLI
+      run: |
+        pip install kaggle
+        mkdir -p ~/.kaggle
+        cp /home/ubuntu/.kaggle/kaggle.json ~/.kaggle/
+        chmod 600 ~/.kaggle/kaggle.json
+
+    - name: Download dataset from Kaggle
+      env:
+        KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
+        KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
+      run: |
+        kaggle datasets download -d sauravmaheshkar/nerf-dataset -p preprocessed_data
+        if [ $? -ne 0 ]; then
+          echo "Failed to download dataset from Kaggle."
+          exit 1
+        fi
+        echo "Contents of preprocessed_data directory after download:"
+        ls -l preprocessed_data
+        echo "Contents of nerf-dataset.zip:"
+        unzip -l preprocessed_data/nerf-dataset.zip
+        unzip -o preprocessed_data/nerf-dataset.zip -d preprocessed_data
+        if [ $? -ne 0 ]; then
+          echo "Failed to unzip dataset."
+          exit 1
+        fi
+        echo "Contents of preprocessed_data directory after unzip:"
+        ls -l preprocessed_data
+        if [ -d "preprocessed_data/nerf_llff_data" ] || [ -d "preprocessed_data/nerf_real_360" ] || [ -d "preprocessed_data/nerf_synthetic" ]; then
+          echo "Dataset directories exist."
+        else
+          echo "Dataset directories do not exist."
+          exit 1
+        fi
+
+    - name: Wait for dataset extraction
+      run: |
+        for i in {1..60}; do
+          if [ -d "preprocessed_data/nerf_llff_data/trex/images" ]; then
+            echo "Dataset extraction complete."
+            break
+          else
+            echo "Waiting for dataset extraction... (Attempt $i)"
+            echo "Current contents of preprocessed_data directory:"
+            ls -l preprocessed_data
+            echo "Current contents of nerf_llff_data directory:"
+            ls -l preprocessed_data/nerf_llff_data
+            sleep 10
+          fi
+        done
+        if [ ! -d "preprocessed_data/nerf_llff_data/trex/images" ]; then
+          echo "Dataset extraction failed."
+          exit 1
+        fi
+
+    - name: Verify dataset download
+      run: |
+        if [ -d "preprocessed_data/nerf_llff_data" ] || [ -d "preprocessed_data/nerf_real_360" ] || [ -d "preprocessed_data/nerf_synthetic" ]; then
+          echo "Dataset directories exist and are not empty."
+        else
+          echo "Dataset directories do not exist or are empty."
+          exit 1
+        fi
+
+    - name: List contents of preprocessed_data directory
+      run: |
+        echo "Contents of preprocessed_data directory:"
+        ls -l preprocessed_data
+
+    - name: List contents of nerf_llff_data subdirectories
+      run: |
+        echo "Contents of nerf_llff_data subdirectories:"
+        ls -lR preprocessed_data/nerf_llff_data
+
+    - name: List all subdirectories within nerf_llff_data
+      run: |
+        echo "Listing all subdirectories within nerf_llff_data:"
+        find preprocessed_data/nerf_llff_data -type d
+
+    - name: List contents of nerf_llff_data directory
+      run: |
+        echo "Contents of nerf_llff_data directory:"
+        ls -l preprocessed_data/nerf_llff_data
+
+    - name: List contents of nerf_real_360 directory
+      run: |
+        echo "Contents of nerf_real_360 directory:"
+        ls -l preprocessed_data/nerf_real_360
+
+    - name: List contents of nerf_synthetic directory
+      run: |
+        echo "Contents of nerf_synthetic directory:"
+        ls -l preprocessed_data/nerf_synthetic
+
+    - name: List contents of images directories in nerf_llff_data
+      run: |
+        echo "Contents of images directories in nerf_llff_data:"
+        ls -l preprocessed_data/nerf_llff_data/trex/images/
+
+    - name: Verify presence of image files in nerf_llff_data directory
+      run: |
+        if find preprocessed_data/nerf_llff_data -type f \( -name "*.png" -o -name "*.jpg" -o -name "*.jpeg" \) | grep -q .; then
+          echo "Image files exist in nerf_llff_data directory."
+        else
+          echo "Image files do not exist in nerf_llff_data directory."
+          exit 1
+        fi
+
+    - name: Train model
+      run: |
+        python nonrigid_nerf/train.py --config nonrigid_nerf/configs/training_config.txt
 
     - name: Run tests
       run: |
