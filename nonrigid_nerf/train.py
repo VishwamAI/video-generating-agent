@@ -617,7 +617,7 @@ def render(
       acc_map: [batch_size]. Accumulated opacity (alpha) along a ray.
       extras: dict with everything returned by render_rays().
     """
-    device = rays_o.device if rays_o.is_cuda else 'cpu'
+    device = 'cpu'
 
     if use_viewdirs:
         # provide ray directions as input
