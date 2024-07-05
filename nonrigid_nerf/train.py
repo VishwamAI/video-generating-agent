@@ -1992,7 +1992,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.rootdir is None:
-        args.rootdir = "/default/rootdir"
+        args.rootdir = "/home/ubuntu/default/rootdir"
     if args.expname is None:
         args.expname = "default_expname"
     results_folder = os.path.join(args.rootdir, args.expname, "results/")
