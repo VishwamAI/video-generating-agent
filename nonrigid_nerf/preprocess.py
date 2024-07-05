@@ -6,7 +6,7 @@ import numpy as np
 
 def preprocess_images(input_dir, output_dir):
     if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
+        os.makedirs(output_dir, exist_ok=True)
 
     image_files = glob.glob(os.path.join(input_dir, '*.jpg'))
     if not image_files:
