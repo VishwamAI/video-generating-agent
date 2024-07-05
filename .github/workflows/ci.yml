@@ -93,7 +93,13 @@ jobs:
           echo "Failed to download dataset from Kaggle."
           exit 1
         fi
-        echo "Dataset download complete."
+        if [ -f "preprocessed_data/nerf-dataset.zip" ]; then
+          echo "Dataset download complete."
+          echo "Size of nerf-dataset.zip: $(stat -c%s preprocessed_data/nerf-dataset.zip) bytes"
+        else
+          echo "nerf-dataset.zip file does not exist."
+          exit 1
+        fi
         echo "Contents of preprocessed_data directory after download:"
         ls -l preprocessed_data
         echo "Contents of nerf-dataset.zip:"
@@ -107,11 +113,16 @@ jobs:
           echo "Failed to unzip dataset."
           exit 1
         fi
-        echo "Dataset unzip complete."
-        echo "Contents of preprocessed_data directory after unzip:"
-        ls -l preprocessed_data
-        echo "Contents of nerf_llff_data directory after unzip:"
-        ls -l preprocessed_data/nerf_llff_data
+        if [ -d "preprocessed_data/nerf_llff_data" ]; then
+          echo "Dataset unzip complete."
+          echo "Contents of preprocessed_data directory after unzip:"
+          ls -l preprocessed_data
+          echo "Contents of nerf_llff_data directory after unzip:"
+          ls -l preprocessed_data/nerf_llff_data
+        else
+          echo "nerf_llff_data directory does not exist."
+          exit 1
+        fi
         if [ -d "preprocessed_data/nerf_llff_data" ] || [ -d "preprocessed_data/nerf_real_360" ] || [ -d "preprocessed_data/nerf_synthetic" ]; then
           echo "Dataset directories exist."
         else
