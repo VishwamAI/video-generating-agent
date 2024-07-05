@@ -62,7 +62,7 @@ jobs:
       run: |
         pip install kaggle
         mkdir -p ~/.kaggle
-        cp /home/ubuntu/.kaggle/kaggle.json ~/.kaggle/
+        echo '{"username":"${{ secrets.KAGGLE_USERNAME }}","key":"${{ secrets.KAGGLE_KEY }}"}' > ~/.kaggle/kaggle.json
         chmod 600 ~/.kaggle/kaggle.json
 
     - name: Download dataset from Kaggle
