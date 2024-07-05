@@ -135,7 +135,7 @@ jobs:
         for i in {1..480}; do  # Increased timeout to 480 iterations
           echo "Current time: $(date)"
           echo "Size of nerf-dataset.zip: $(stat -c%s preprocessed_data/nerf-dataset.zip) bytes"
-          if [ -d "preprocessed_data/nerf_llff_data/trex/images" ]; then
+          if [ -d "preprocessed_data/nerf_llff_data/nerf_llff_data/fern/images" ]; then
             echo "Dataset extraction complete."
             break
           else
@@ -144,19 +144,19 @@ jobs:
             ls -l preprocessed_data
             echo "Current contents of nerf_llff_data directory:"
             ls -l preprocessed_data/nerf_llff_data
-            echo "Current contents of nerf_llff_data/trex directory:"
-            ls -l preprocessed_data/nerf_llff_data/trex
+            echo "Current contents of nerf_llff_data/nerf_llff_data/fern directory:"
+            ls -l preprocessed_data/nerf_llff_data/nerf_llff_data/fern
             sleep 15
           fi
         done
-        if [ ! -d "preprocessed_data/nerf_llff_data/trex/images" ]; then
+        if [ ! -d "preprocessed_data/nerf_llff_data/nerf_llff_data/fern/images" ]; then
           echo "Dataset extraction failed."
           echo "Final contents of preprocessed_data directory:"
           ls -l preprocessed_data
           echo "Final contents of nerf_llff_data directory:"
           ls -l preprocessed_data/nerf_llff_data
-          echo "Final contents of nerf_llff_data/trex directory:"
-          ls -l preprocessed_data/nerf_llff_data/trex
+          echo "Final contents of nerf_llff_data/nerf_llff_data/fern directory:"
+          ls -l preprocessed_data/nerf_llff_data/nerf_llff_data/fern
           exit 1
         fi
 
@@ -203,12 +203,12 @@ jobs:
     - name: List contents of images directories in nerf_llff_data
       run: |
         echo "Listing contents of images directories in nerf_llff_data:"
-        ls -l preprocessed_data/nerf_llff_data/trex/images/
+        ls -l preprocessed_data/nerf_llff_data/nerf_llff_data/fern/images/
 
     - name: Verify presence of image files in nerf_llff_data directory
       run: |
         echo "Verifying presence of image files in nerf_llff_data directory..."
-        if find preprocessed_data/nerf_llff_data -type f \( -name "*.png" -o -name "*.jpg" -o -name "*.jpeg" \) | grep -q .; then
+        if find preprocessed_data/nerf_llff_data/nerf_llff_data -type f \( -name "*.png" -o -name "*.jpg" -o -name "*.jpeg" \) | grep -q .; then
           echo "Image files exist in nerf_llff_data directory."
         else
           echo "Image files do not exist in nerf_llff_data directory."
