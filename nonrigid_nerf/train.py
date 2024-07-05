@@ -1082,6 +1082,9 @@ def raw2outputs(raw, z_vals, rays_d, raw_noise_std=0, white_bkgd=False, pytest=F
 
     opacity_alpha = raw2alpha(raw[..., 3] + noise, dists)  # [N_rays, N_samples]
     # weights = alpha * tf.math.cumprod(1.-alpha + 1e-10, -1, exclusive=True)
+    print(f"Device for opacity_alpha: {opacity_alpha.device}")
+    print(f"Device for dists: {dists.device}")
+    print(f"Device for raw: {raw.device}")
     visibility_weights = (
         opacity_alpha
         * torch.cumprod(
