@@ -8,7 +8,7 @@ def preprocess_images(input_dir, output_dir):
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
-    image_files = glob.glob(os.path.join(input_dir, '*.JPG'))
+    image_files = glob.glob(os.path.join(input_dir, '*.jpg'))
     if not image_files:
         raise FileNotFoundError(f"No image files found in {input_dir}")
 
