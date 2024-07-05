@@ -25,4 +25,7 @@ if __name__ == "__main__":
     parser.add_argument("--output", type=str, required=True, help="Output directory for preprocessed images")
     args = parser.parse_args()
 
+    # Corrected the input directory path
+    args.input = args.input.replace('nerf_llff_data/nerf_llff_data', 'nerf_llff_data')
+
     preprocess_images(args.input, args.output)
