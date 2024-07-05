@@ -118,20 +118,20 @@ jobs:
         fi
         echo "Contents of preprocessed_data directory after unzip:"
         ls -l preprocessed_data
-        if [ -d "preprocessed_data/nerf_llff_data" ]; then
+        if [ -d "preprocessed_data/nerf_llff_data/nerf_llff_data" ]; then
           echo "Dataset unzip complete."
           echo "Contents of nerf_llff_data directory after unzip:"
-          ls -l preprocessed_data/nerf_llff_data
-          echo "Contents of nerf_llff_data/trex directory after unzip:"
-          ls -l preprocessed_data/nerf_llff_data/trex
+          ls -l preprocessed_data/nerf_llff_data/nerf_llff_data
+          echo "Contents of nerf_llff_data/nerf_llff_data/fern directory after unzip:"
+          ls -l preprocessed_data/nerf_llff_data/nerf_llff_data/fern
         else
           echo "nerf_llff_data directory does not exist."
           exit 1
         fi
-        if [ -d "preprocessed_data/nerf_llff_data/trex/images" ]; then
-          echo "trex/images directory exists."
+        if [ -d "preprocessed_data/nerf_llff_data/nerf_llff_data/fern/images" ]; then
+          echo "fern/images directory exists."
         else
-          echo "trex/images directory does not exist."
+          echo "fern/images directory does not exist."
           exit 1
         fi
 
@@ -140,7 +140,7 @@ jobs:
         for i in {1..480}; do  # Increased timeout to 480 iterations
           echo "Current time: $(date)"
           echo "Size of nerf-dataset.zip: $(stat -c%s preprocessed_data/nerf-dataset.zip) bytes"
-          if [ -d "preprocessed_data/nerf_llff_data/trex/images" ]; then
+          if [ -d "preprocessed_data/nerf_llff_data/nerf_llff_data/fern/images" ]; then
             echo "Dataset extraction complete."
             break
           else
@@ -149,19 +149,19 @@ jobs:
             ls -l preprocessed_data
             echo "Current contents of nerf_llff_data directory:"
             ls -l preprocessed_data/nerf_llff_data
-            echo "Current contents of nerf_llff_data/trex directory:"
-            ls -l preprocessed_data/nerf_llff_data/trex
+            echo "Current contents of nerf_llff_data/fern directory:"
+            ls -l preprocessed_data/nerf_llff_data/nerf_llff_data/fern
             sleep 15
           fi
         done
-        if [ ! -d "preprocessed_data/nerf_llff_data/trex/images" ]; then
+        if [ ! -d "preprocessed_data/nerf_llff_data/nerf_llff_data/fern/images" ]; then
           echo "Dataset extraction failed."
           echo "Final contents of preprocessed_data directory:"
           ls -l preprocessed_data
           echo "Final contents of nerf_llff_data directory:"
           ls -l preprocessed_data/nerf_llff_data
-          echo "Final contents of nerf_llff_data/trex directory:"
-          ls -l preprocessed_data/nerf_llff_data/trex
+          echo "Final contents of nerf_llff_data/fern directory:"
+          ls -l preprocessed_data/nerf_llff_data/nerf_llff_data/fern
           exit 1
         fi
 
@@ -207,10 +207,10 @@ jobs:
 
     - name: List contents of images directories in nerf_llff_data
       run: |
-        if [ -d "preprocessed_data/nerf_llff_data/trex/images/" ]; then
-          ls -l preprocessed_data/nerf_llff_data/trex/images/
+        if [ -d "preprocessed_data/nerf_llff_data/nerf_llff_data/fern/images/" ]; then
+          ls -l preprocessed_data/nerf_llff_data/nerf_llff_data/fern/images/
         else
-          echo "Directory preprocessed_data/nerf_llff_data/trex/images/ does not exist."
+          echo "Directory preprocessed_data/nerf_llff_data/nerf_llff_data/fern/images/ does not exist."
           echo "Current working directory: $(pwd)"
           echo "Contents of preprocessed_data/nerf_llff_data:"
           ls -l preprocessed_data/nerf_llff_data
