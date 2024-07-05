@@ -1995,6 +1995,8 @@ if __name__ == "__main__":
         args.rootdir = "/home/ubuntu/default/rootdir"
     if args.expname is None:
         args.expname = "default_expname"
+    if args.datadir is None:
+        args.datadir = "/home/ubuntu/video-generating-agent/data/example_sequence/"
     results_folder = os.path.join(args.rootdir, args.expname, "results/")
     create_folder(results_folder)
     if args.no_reload:
