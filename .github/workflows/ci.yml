@@ -230,7 +230,7 @@ jobs:
         fi
     - name: Train model
       run: |
-        python nonrigid_nerf/train.py --config nonrigid_nerf/configs/training_config.txt --datadir preprocessed_data/nerf_llff_data/preprocessed_images
+        python nonrigid_nerf/train.py --config nonrigid_nerf/configs/training_config.txt --datadir preprocessed_data/nerf_llff_data/trex
     - name: Run tests
       run: |
         python -m unittest discover -s tests
