@@ -1309,7 +1309,7 @@ def main_function(args):
     # Load data
 
     if args.dataset_type == "llff":
-        images, poses, bds, render_poses = load_llff_data(os.path.join(args.datadir, 'images'))
+        images, poses, bds, render_poses = load_llff_data(args.datadir)
         dataset_extras = _get_multi_view_helper_mappings(images.shape[0], args.datadir)
         intrinsics, image_folder = get_full_resolution_intrinsics(args, dataset_extras)
 
