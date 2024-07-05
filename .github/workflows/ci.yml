@@ -208,12 +208,12 @@ jobs:
     - name: List contents of images directories in nerf_llff_data
       run: |
         echo "Listing contents of images directories in nerf_llff_data:"
-        ls -l preprocessed_data/nerf_llff_data/nerf_llff_data/trex/images/
+        ls -l preprocessed_data/nerf_llff_data/trex/images/
 
     - name: Verify presence of image files in nerf_llff_data directory
       run: |
         echo "Verifying presence of image files in nerf_llff_data directory..."
-        if find preprocessed_data/nerf_llff_data/nerf_llff_data -type f \( -name "*.png" -o -name "*.jpg" -o -name "*.jpeg" \) | grep -q .; then
+        if find preprocessed_data/nerf_llff_data -type f \( -name "*.png" -o -name "*.jpg" -o -name "*.jpeg" \) | grep -q .; then
           echo "Image files exist in nerf_llff_data directory."
         else
           echo "Image files do not exist in nerf_llff_data directory."
