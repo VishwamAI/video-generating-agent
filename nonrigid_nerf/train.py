@@ -1438,7 +1438,7 @@ def main_function(args):
 
     # create autodecoder variables as pytorch tensors
     ray_bending_latents_list = [
-        torch.zeros(args.ray_bending_latent_size).cuda()
+        torch.zeros(args.ray_bending_latent_size).to(device)
         for _ in range(len(dataset_extras["raw_timesteps"]))
     ]
     for latent in ray_bending_latents_list:
@@ -1481,7 +1481,7 @@ def main_function(args):
     scripts_dict["max_nerf_volume_point"] = max_point.detach().cpu().numpy().tolist()
 
     # Move testing data to GPU
-    render_poses = torch.Tensor(render_poses).cuda()
+    render_poses = torch.Tensor(render_poses).to(device)
 
     # Prepare raybatch tensor if batching random rays
     N_rand = args.N_rand
@@ -1510,7 +1510,7 @@ def main_function(args):
     print(rays_rgb.shape)
 
     # Move training data to GPU
-    poses = torch.Tensor(poses).cuda()
+    poses = torch.Tensor(poses).to(device)
 
     # N_iters = 200000 + 1
     N_iters = args.N_iters + 1
@@ -1549,10 +1549,10 @@ def main_function(args):
             torch.Tensor(
                 np.stack([image_indices, x_coordinates, y_coordinates], axis=-1)
             )
-            .cuda()
+            .to(device)
             .long()
         )  # batch x 3
-        batch = torch.transpose(torch.Tensor(batch).cuda(), 0, 1)  # 4 x batch x 3
+        batch = torch.transpose(torch.Tensor(batch).to(device), 0, 1)  # 4 x batch x 3
         batch_rays, target_s = batch[:2], batch[2]
 
         losses = parallel_training(
@@ -1569,11 +1569,11 @@ def main_function(args):
         )
 
         # losses will have shape N_rays
-        all_test_images_indicator = torch.zeros(images.shape[0], dtype=np.long).cuda()
+        all_test_images_indicator = torch.zeros(images.shape[0], dtype=np.long).to(device)
         all_test_images_indicator[i_test] = 1
         all_training_images_indicator = torch.zeros(
             images.shape[0], dtype=np.long
-        ).cuda()
+        ).to(device)
         all_training_images_indicator[i_train] = 1
         # index with image IDs of the N_rays rays to determine weights
         current_test_images_indicator = all_test_images_indicator[
