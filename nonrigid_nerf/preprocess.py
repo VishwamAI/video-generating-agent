@@ -30,6 +30,6 @@ if __name__ == "__main__":
 
     # Update the input directory path to match the actual directory structure
     if 'trex' in args.input:
-        args.input = 'preprocessed_data/nerf_llff_data/trex'
+        args.input = 'preprocessed_data/nerf_llff_data/trex/images'
 
     preprocess_images(args.input, args.output)
