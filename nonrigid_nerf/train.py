@@ -23,10 +23,10 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
     logging.StreamHandler()
 ])
 
-from nonrigid_nerf.run_nerf_helpers import *
+from .run_nerf_helpers import *
 from scripts.text_encoder import TextEncoder
 #from load_llff import load_llff_data_multi_view
-from nonrigid_nerf.load_llff import load_llff_data
+from .load_llff import load_llff_data
 
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
