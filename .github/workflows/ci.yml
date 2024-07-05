@@ -175,6 +175,10 @@ jobs:
           exit 1
         fi
 
+    - name: Preprocess images
+      run: |
+        python nonrigid_nerf/preprocess.py --input preprocessed_data/nerf_llff_data/nerf_llff_data/trex/images --output preprocessed_data/nerf_llff_data/preprocessed_images
+
     - name: List contents of preprocessed_data directory
       run: |
         echo "Listing contents of preprocessed_data directory:"
@@ -226,7 +230,7 @@ jobs:
         fi
     - name: Train model
       run: |
-        python nonrigid_nerf/train.py --config nonrigid_nerf/configs/training_config.txt --datadir preprocessed_data/nerf_llff_data/nerf_llff_data
+        python nonrigid_nerf/train.py --config nonrigid_nerf/configs/training_config.txt --datadir preprocessed_data/nerf_llff_data/preprocessed_images
     - name: Run tests
       run: |
         python -m unittest discover -s tests
