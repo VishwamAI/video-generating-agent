@@ -95,7 +95,7 @@ def get_embedder(multires, i=0):
     return embed, out_dim
 
 class NeRF(nn.Module):
-    def __init__(self, D=8, W=256, input_ch=3, output_ch=4, skips=[4], input_ch_views=0, use_viewdirs=False, ray_bender=None, ray_bending_latent_size=32, embeddirs_fn=None, num_ray_samples=64, approx_nonrigid_viewdirs=False, time_conditioned_baseline=False):
+    def __init__(self, D=8, W=256, input_ch=860, output_ch=4, skips=[4], input_ch_views=0, use_viewdirs=False, ray_bender=None, ray_bending_latent_size=32, embeddirs_fn=None, num_ray_samples=64, approx_nonrigid_viewdirs=False, time_conditioned_baseline=False):
         super(NeRF, self).__init__()
         self.D = D
         self.W = W
@@ -125,12 +125,20 @@ class NeRF(nn.Module):
             self.output_linear = nn.Linear(W, output_ch)
 
     def forward(self, x, detailed_output=False):
-        input_pts, input_views = torch.split(x, [self.input_ch, self.input_ch_views], dim=-1)
+        if self.input_ch_views > 0:
+            input_pts, input_views = torch.split(x, [self.input_ch, self.input_ch_views], dim=-1)
+        else:
+            input_pts, input_views = x, None
+        print(f"input_pts shape: {input_pts.shape}")
+        if input_views is not None:
+            print(f"input_views shape: {input_views.shape}")
         h = input_pts
         for i, l in enumerate(self.pts_linears):
             h = F.relu(l(h))
+            print(f"h shape after layer {i}: {h.shape}")
             if i in self.skips:
                 h = torch.cat([input_pts, h], -1)
+                print(f"h shape after skip connection at layer {i}: {h.shape}")
 
         if self.use_viewdirs:
             alpha = self.alpha_linear(h)
@@ -138,6 +146,7 @@ class NeRF(nn.Module):
             h = torch.cat([feature, input_views], -1)
             for l in self.views_linears:
                 h = F.relu(l(h))
+                print(f"h shape after views linear layer: {h.shape}")
 
             rgb = self.rgb_linear(h)
             outputs = torch.cat([rgb, alpha], -1)
@@ -211,12 +220,14 @@ def run_network(
         inputs, [-1, inputs.shape[-1]]
     )  # N_rays * N_samples_per_ray x 3
     embedded = embed_fn(inputs_flat)
+    print(f"embedded shape: {embedded.shape}")
 
     if viewdirs is not None and embeddirs_fn is not None:
         input_dirs = viewdirs[:, None].expand(inputs.shape)
         input_dirs_flat = torch.reshape(input_dirs, [-1, input_dirs.shape[-1]])
         embedded_dirs = embeddirs_fn(input_dirs_flat)
         embedded = torch.cat([embedded, embedded_dirs], -1)
+        print(f"embedded with viewdirs shape: {embedded.shape}")
 
     ray_bending_latents = additional_pixel_information[
         "ray_bending_latents"
@@ -227,6 +238,7 @@ def run_network(
     ray_bending_latents = torch.reshape(
         ray_bending_latents, [-1, ray_bending_latents.shape[-1]]
     )  # N_rays * N_samples_per_ray x latent_size
+    print(f"ray_bending_latents shape: {ray_bending_latents.shape}")
 
     text_genre_latents = additional_pixel_information["text_genre_latents"]  # N_rays x latent_size
     if text_genre_latents.dim() == 2:
@@ -240,6 +252,7 @@ def run_network(
     text_genre_latents = torch.reshape(
         text_genre_latents, [-1, text_genre_latents.shape[-1]]
     )  # N_rays * N_samples_per_ray x latent_size
+    print(f"text_genre_latents shape: {text_genre_latents.shape}")
 
     # Ensure the dimensions match for concatenation
     if embedded.shape[0] != ray_bending_latents.shape[0]:
@@ -247,11 +260,16 @@ def run_network(
     if embedded.shape[0] != text_genre_latents.shape[0]:
         text_genre_latents = text_genre_latents[:embedded.shape[0], :]
 
+    # Adjust the concatenation to match the expected input channels
+    expected_input_ch = embedded.shape[1] + ray_bending_latents.shape[1] + text_genre_latents.shape[1]
     embedded = torch.cat(
         [embedded, ray_bending_latents, text_genre_latents], -1
     )  # N_rays * N_samples_per_ray x (embedded position + embedded viewdirection + latent code)
+    print(f"final embedded shape: {embedded.shape}")
 
-    outputs_flat = batchify(fn, netchunk, detailed_output)(
+    outputs_flat = batchify(
+        fn, netchunk, detailed_output=detailed_output
+    )(
         embedded
     )  # fn is model or model_fine from create_nerf(). this calls Nerf.forward(embedded)
     if detailed_output:
@@ -1046,7 +1064,7 @@ def raw2outputs(raw, z_vals, rays_d, raw_noise_std=0, white_bkgd=False, pytest=F
 
     dists = z_vals[..., 1:] - z_vals[..., :-1]
     dists = torch.cat(
-        [dists, torch.Tensor([1e10]).to(device).expand(dists[..., :1].shape)], -1
+        [dists, torch.Tensor([1e10]).to('cpu').expand(dists[..., :1].shape)], -1
     )  # [N_rays, N_samples]
 
     dists = dists * torch.norm(rays_d[..., None, :], dim=-1)
