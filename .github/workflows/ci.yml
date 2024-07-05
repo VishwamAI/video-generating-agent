@@ -209,11 +209,10 @@ jobs:
 
     - name: List contents of images directories in nerf_llff_data
       run: |
-        echo "Listing contents of images directories in nerf_llff_data:"
-        if [ -d "preprocessed_data/nerf_llff_data/trex/images/" ]; then
-          ls -l preprocessed_data/nerf_llff_data/trex/images/
+        if [ -d "preprocessed_data/nerf_llff_data/nerf_llff_data/trex/images/" ]; then
+          ls -l preprocessed_data/nerf_llff_data/nerf_llff_data/trex/images/
         else
-          echo "Directory preprocessed_data/nerf_llff_data/trex/images/ does not exist."
+          echo "Directory preprocessed_data/nerf_llff_data/nerf_llff_data/trex/images/ does not exist."
           echo "Current working directory: $(pwd)"
           echo "Contents of preprocessed_data/nerf_llff_data:"
           ls -l preprocessed_data/nerf_llff_data
@@ -221,7 +220,7 @@ jobs:
         fi
 
         echo "Verifying presence of image files in nerf_llff_data directory..."
-        if find preprocessed_data/nerf_llff_data -type f \( -name "*.png" -o -name "*.jpg" -o -name "*.jpeg" \) | grep -q .; then
+        if find preprocessed_data/nerf_llff_data/nerf_llff_data -type f \( -name "*.png" -o -name "*.jpg" -o -name "*.jpeg" \) | grep -q .; then
           echo "Image files exist in nerf_llff_data directory."
         else
           echo "Image files do not exist in nerf_llff_data directory."
@@ -229,7 +228,7 @@ jobs:
         fi
     - name: Train model
       run: |
-        python nonrigid_nerf/train.py --config nonrigid_nerf/configs/training_config.txt --datadir preprocessed_data/nerf_llff_data
+        python nonrigid_nerf/train.py --config nonrigid_nerf/configs/training_config.txt --datadir preprocessed_data/nerf_llff_data/nerf_llff_data
     - name: Run tests
       run: |
         python -m unittest discover -s tests
