@@ -124,7 +124,7 @@ class NeRF(nn.Module):
         else:
             self.output_linear = nn.Linear(W, output_ch)
 
-    def forward(self, x):
+    def forward(self, x, detailed_output=False):
         input_pts, input_views = torch.split(x, [self.input_ch, self.input_ch_views], dim=-1)
         h = input_pts
         for i, l in enumerate(self.pts_linears):
@@ -144,6 +144,8 @@ class NeRF(nn.Module):
         else:
             outputs = self.output_linear(h)
 
+        if detailed_output:
+            return outputs, {"details": "example_details"}  # Placeholder for actual detailed output
         return outputs
 
 def ndc_rays(H, W, focal, near, rays_o, rays_d):
@@ -228,16 +230,22 @@ def run_network(
 
     text_genre_latents = additional_pixel_information["text_genre_latents"]  # N_rays x latent_size
     if text_genre_latents.dim() == 2:
-        text_genre_latents = text_genre_latents[:, None, :, :].expand(
-            (inputs.shape[0], inputs.shape[1], text_genre_latents.shape[1], text_genre_latents.shape[2])
+        text_genre_latents = text_genre_latents[:, None, :].expand(
+            (inputs.shape[0], inputs.shape[1], text_genre_latents.shape[1])
         )  # N_rays x N_samples_per_ray x latent_size
     else:
-        text_genre_latents = text_genre_latents[:, None, :].expand(
-            (inputs.shape[0], inputs.shape[1], text_genre_latents.shape[2])
+        text_genre_latents = text_genre_latents[:, None, :, :].expand(
+            (inputs.shape[0], inputs.shape[1], text_genre_latents.shape[1], text_genre_latents.shape[2])
         )  # N_rays x N_samples_per_ray x latent_size
     text_genre_latents = torch.reshape(
         text_genre_latents, [-1, text_genre_latents.shape[-1]]
     )  # N_rays * N_samples_per_ray x latent_size
+
+    # Ensure the dimensions match for concatenation
+    if embedded.shape[0] != ray_bending_latents.shape[0]:
+        ray_bending_latents = ray_bending_latents[:embedded.shape[0], :]
+    if embedded.shape[0] != text_genre_latents.shape[0]:
+        text_genre_latents = text_genre_latents[:embedded.shape[0], :]
 
     embedded = torch.cat(
         [embedded, ray_bending_latents, text_genre_latents], -1
