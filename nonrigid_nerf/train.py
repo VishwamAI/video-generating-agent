@@ -255,6 +255,31 @@ def run_network(
         return outputs
 
 
+def render_rays(
+    ray_batch,
+    network_fn,
+    network_query_fn,
+    N_samples,
+    retraw=False,
+    lindisp=False,
+    perturb=0.0,
+    N_importance=0,
+    network_fine=None,
+    white_bkgd=False,
+    raw_noise_std=0.0,
+    additional_pixel_information=None,
+    detailed_output=False,
+    verbose=False,
+    pytest=False,
+    **dummy_kwargs,
+):
+    """Volumetric rendering.
+    Args:
+      ray_batch: array of shape [batch_size, ...]. All information necessary
+        for sampling along a ray, including: ray origin, ray direction, min
+    """
+    # Function implementation here
+
 def batchify_rays(
     rays_flat,
     additional_pixel_information,
@@ -291,29 +316,6 @@ def batchify_rays(
     return all_ret
 
 print("Defining render_rays function")  # Diagnostic print statement
-def render_rays(
-    ray_batch,
-    network_fn,
-    network_query_fn,
-    N_samples,
-    retraw=False,
-    lindisp=False,
-    perturb=0.0,
-    N_importance=0,
-    network_fine=None,
-    white_bkgd=False,
-    raw_noise_std=0.0,
-    additional_pixel_information=None,
-    detailed_output=False,
-    verbose=False,
-    pytest=False,
-    **dummy_kwargs,
-):
-    """Volumetric rendering.
-    Args:
-      ray_batch: array of shape [batch_size, ...]. All information necessary
-        for sampling along a ray, including: ray origin, ray direction, min
-    """
 
 
 class training_wrapper_class(torch.nn.Module):
