@@ -208,10 +208,10 @@ jobs:
     - name: List contents of images directories in nerf_llff_data
       run: |
         echo "Listing contents of images directories in nerf_llff_data:"
-        if [ -d "preprocessed_data/nerf_llff_data/trex/images/" ]; then
-          ls -l preprocessed_data/nerf_llff_data/trex/images/
+        if [ -d "preprocessed_data/nerf_llff_data/nerf_llff_data/trex/images/" ]; then
+          ls -l preprocessed_data/nerf_llff_data/nerf_llff_data/trex/images/
         else
-          echo "Directory preprocessed_data/nerf_llff_data/trex/images/ does not exist."
+          echo "Directory preprocessed_data/nerf_llff_data/nerf_llff_data/trex/images/ does not exist."
           echo "Current working directory: $(pwd)"
           echo "Contents of preprocessed_data/nerf_llff_data:"
           ls -l preprocessed_data/nerf_llff_data
