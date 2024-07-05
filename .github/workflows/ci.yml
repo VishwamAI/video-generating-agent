@@ -64,6 +64,7 @@ jobs:
         if [ -d ~/.kaggle ]; then
           echo "{\"username\":\"${{ secrets.KAGGLE_USERNAME }}\",\"key\":\"${{ secrets.KAGGLE_KEY }}\"}" > ~/.kaggle/kaggle.json
           chmod 600 ~/.kaggle/kaggle.json
+          echo "kaggle.json file created successfully."
         else
           echo "Failed to create .kaggle directory."
           exit 1
@@ -75,7 +76,6 @@ jobs:
     - name: Install Kaggle CLI
       run: |
         pip install kaggle
-        mkdir -p ~/.kaggle
         echo "Kaggle CLI installed successfully."
         echo "Checking for kaggle.json file..."
         if [ -f ~/.kaggle/kaggle.json ]; then
