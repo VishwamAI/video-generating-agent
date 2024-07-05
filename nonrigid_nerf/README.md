@@ -31,6 +31,13 @@ conda env create -f environment.yml
 ```
 conda install -c conda-forge ffmpeg
 ```
+* (New) Download the required datasets using the Kaggle API:
+	* Ensure you have the Kaggle API installed and configured with your credentials.
+	* Download the datasets using the following commands:
+	```
+	kaggle datasets download -d sauravmaheshkar/nerf-dataset -p preprocessed_data/
+	unzip preprocessed_data/nerf-dataset.zip -d preprocessed_data/
+	```
 
 ### Walkthrough With an Example Sequence
 
@@ -117,7 +124,7 @@ The `--fps 10` option can be used to modify the framerate at which images are ex
 
 ### Training
 
-The config file `default.txt` needs to be modified as follows:
+The config file `training_config.txt` needs to be modified as follows:
 * `rootdir`: An output folder that collects all experiments (i.e. multiple trainings)
 * `datadir`: Recorded input sequence. Set to `PARENT_FOLDER` from the `Preprocess` section above
 * `expname`: Name of this experiment. Output will be written to `rootdir/expname/`
@@ -130,15 +137,18 @@ Other relevant parameters are:
 
 Finally, start the training by running:
 ```
-python train.py
+python train.py --config configs/training_config.txt
 ```
 A custom config file can optionally be passed via `--config CONFIG_FILE`.
-
 The `train_block_size` and `test_block_size` options allow to split the images into training and test blocks. The scheme is `AAAAABBAAAAABBAAA` for `train_block_size=5` and `test_block_size=2`. Note that optimizing for the latent codes of test images slows down training by about 30% (relative to only using training images) due to an additional backwards pass.
 
 If a previous version of the experiment exists, `train.py` will automatically continue training from it. To prevent that, pass the `--no_reload` flag.
 
 The `--time_conditioned_baseline` flag will turn on the naive NR-NeRF baseline described in the paper.
+
+**CI/CD Pipeline Updates**
+
+The CI/CD pipeline has been updated to include steps for downloading and verifying the presence of the required datasets. It also includes steps for running the training process and ensuring that all checks pass. The pipeline configuration file is located at `.github/workflows/ci.yml`.
 
 **(Optional) Multi-View Data and Per-Camera Intrinsics**
 

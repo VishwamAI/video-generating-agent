@@ -16,10 +16,10 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Set up Python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v3
       with:
         python-version: 3.8
 
@@ -58,27 +58,39 @@ jobs:
           exit 1
         fi
 
+    # Removed the step that copies kaggle.json to the runner's home directory
+
     - name: Install Kaggle CLI
       run: |
         pip install kaggle
-        mkdir -p ~/.kaggle
-        cp /home/ubuntu/.kaggle/kaggle.json ~/.kaggle/
-        chmod 600 ~/.kaggle/kaggle.json
-
-    - name: Download dataset from Kaggle
+        echo "Kaggle CLI installed successfully."
       env:
         KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
         KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
+
+    - name: Download dataset from Kaggle
       run: |
+        echo "Starting dataset download from Kaggle..."
         kaggle datasets download -d sauravmaheshkar/nerf-dataset -p preprocessed_data
         if [ $? -ne 0 ]; then
           echo "Failed to download dataset from Kaggle."
+          exit 1
+        fi
+        if [ -f "preprocessed_data/nerf-dataset.zip" ]; then
+          echo "Dataset download complete."
+          echo "Size of nerf-dataset.zip: $(stat -c%s preprocessed_data/nerf-dataset.zip) bytes"
+        else
+          echo "nerf-dataset.zip file does not exist."
           exit 1
         fi
         echo "Contents of preprocessed_data directory after download:"
         ls -l preprocessed_data
         echo "Contents of nerf-dataset.zip:"
         unzip -l preprocessed_data/nerf-dataset.zip
+
+    - name: Unzip dataset
+      run: |
+        echo "Starting dataset unzip..."
         unzip -o preprocessed_data/nerf-dataset.zip -d preprocessed_data
         if [ $? -ne 0 ]; then
           echo "Failed to unzip dataset."
@@ -86,17 +98,29 @@ jobs:
         fi
         echo "Contents of preprocessed_data directory after unzip:"
         ls -l preprocessed_data
-        if [ -d "preprocessed_data/nerf_llff_data" ] || [ -d "preprocessed_data/nerf_real_360" ] || [ -d "preprocessed_data/nerf_synthetic" ]; then
-          echo "Dataset directories exist."
+        if [ -d "preprocessed_data/nerf_llff_data/nerf_llff_data" ]; then
+          echo "Dataset unzip complete."
+          echo "Contents of nerf_llff_data directory after unzip:"
+          ls -l preprocessed_data/nerf_llff_data/nerf_llff_data
+          echo "Contents of nerf_llff_data/nerf_llff_data/trex directory after unzip:"
+          ls -l preprocessed_data/nerf_llff_data/nerf_llff_data/trex
         else
-          echo "Dataset directories do not exist."
+          echo "nerf_llff_data directory does not exist."
+          exit 1
+        fi
+        if [ -d "preprocessed_data/nerf_llff_data/nerf_llff_data/trex/images" ]; then
+          echo "trex/images directory exists."
+        else
+          echo "trex/images directory does not exist."
           exit 1
         fi
 
     - name: Wait for dataset extraction
       run: |
-        for i in {1..60}; do
-          if [ -d "preprocessed_data/nerf_llff_data/trex/images" ]; then
+        for i in {1..480}; do  # Increased timeout to 480 iterations
+          echo "Current time: $(date)"
+          echo "Size of nerf-dataset.zip: $(stat -c%s preprocessed_data/nerf-dataset.zip) bytes"
+          if [ -d "preprocessed_data/nerf_llff_data/nerf_llff_data/trex/images" ]; then
             echo "Dataset extraction complete."
             break
           else
@@ -105,31 +129,44 @@ jobs:
             ls -l preprocessed_data
             echo "Current contents of nerf_llff_data directory:"
             ls -l preprocessed_data/nerf_llff_data
-            sleep 10
+            echo "Current contents of nerf_llff_data/trex directory:"
+            ls -l preprocessed_data/nerf_llff_data/nerf_llff_data/trex
+            sleep 15
           fi
         done
-        if [ ! -d "preprocessed_data/nerf_llff_data/trex/images" ]; then
+        if [ ! -d "preprocessed_data/nerf_llff_data/nerf_llff_data/trex/images" ]; then
           echo "Dataset extraction failed."
+          echo "Final contents of preprocessed_data directory:"
+          ls -l preprocessed_data
+          echo "Final contents of nerf_llff_data directory:"
+          ls -l preprocessed_data/nerf_llff_data
+          echo "Final contents of nerf_llff_data/trex directory:"
+          ls -l preprocessed_data/nerf_llff_data/nerf_llff_data/trex
           exit 1
         fi
 
     - name: Verify dataset download
       run: |
-        if [ -d "preprocessed_data/nerf_llff_data" ] || [ -d "preprocessed_data/nerf_real_360" ] || [ -d "preprocessed_data/nerf_synthetic" ]; then
+        echo "Verifying dataset download..."
+        if [ -d "preprocessed_data/nerf_llff_data/nerf_llff_data" ] || [ -d "preprocessed_data/nerf_real_360" ] || [ -d "preprocessed_data/nerf_synthetic" ]; then
           echo "Dataset directories exist and are not empty."
         else
           echo "Dataset directories do not exist or are empty."
           exit 1
         fi
 
+    - name: Preprocess images
+      run: |
+        python nonrigid_nerf/preprocess.py --input preprocessed_data/nerf_llff_data/nerf_llff_data/trex/images --output preprocessed_data/nerf_llff_data/trex
+
     - name: List contents of preprocessed_data directory
       run: |
-        echo "Contents of preprocessed_data directory:"
+        echo "Listing contents of preprocessed_data directory:"
         ls -l preprocessed_data
 
     - name: List contents of nerf_llff_data subdirectories
       run: |
-        echo "Contents of nerf_llff_data subdirectories:"
+        echo "Listing contents of nerf_llff_data subdirectories:"
         ls -lR preprocessed_data/nerf_llff_data
 
     - name: List all subdirectories within nerf_llff_data
@@ -139,37 +176,41 @@ jobs:
 
     - name: List contents of nerf_llff_data directory
       run: |
-        echo "Contents of nerf_llff_data directory:"
+        echo "Listing contents of nerf_llff_data directory:"
         ls -l preprocessed_data/nerf_llff_data
 
     - name: List contents of nerf_real_360 directory
       run: |
-        echo "Contents of nerf_real_360 directory:"
+        echo "Listing contents of nerf_real_360 directory:"
         ls -l preprocessed_data/nerf_real_360
 
     - name: List contents of nerf_synthetic directory
       run: |
-        echo "Contents of nerf_synthetic directory:"
+        echo "Listing contents of nerf_synthetic directory:"
         ls -l preprocessed_data/nerf_synthetic
 
     - name: List contents of images directories in nerf_llff_data
       run: |
-        echo "Contents of images directories in nerf_llff_data:"
-        ls -l preprocessed_data/nerf_llff_data/trex/images/
+        if [ -d "preprocessed_data/nerf_llff_data/nerf_llff_data/fern/images/" ]; then
+          ls -l preprocessed_data/nerf_llff_data/nerf_llff_data/fern/images/
+        else
+          echo "Directory preprocessed_data/nerf_llff_data/nerf_llff_data/fern/images/ does not exist."
+          echo "Current working directory: $(pwd)"
+          echo "Contents of preprocessed_data/nerf_llff_data:"
+          ls -l preprocessed_data/nerf_llff_data
+          exit 1
+        fi
 
-    - name: Verify presence of image files in nerf_llff_data directory
-      run: |
+        echo "Verifying presence of image files in nerf_llff_data directory..."
         if find preprocessed_data/nerf_llff_data -type f \( -name "*.png" -o -name "*.jpg" -o -name "*.jpeg" \) | grep -q .; then
           echo "Image files exist in nerf_llff_data directory."
         else
           echo "Image files do not exist in nerf_llff_data directory."
           exit 1
         fi
-
     - name: Train model
       run: |
-        python nonrigid_nerf/train.py --config nonrigid_nerf/configs/training_config.txt
-
+        python nonrigid_nerf/train.py --config nonrigid_nerf/configs/training_config.txt --datadir preprocessed_data/nerf_llff_data/trex
     - name: Run tests
       run: |
         python -m unittest discover -s tests
