@@ -1284,7 +1284,7 @@ def get_full_resolution_intrinsics(args, dataset_extras):
     scene_subdirs = ['fern', 'flower', 'fortress', 'horns', 'leaves', 'orchids', 'room', 'trex']
     for scene in scene_subdirs:
         image_folder = os.path.join(args.datadir, scene, 'images')
-        if os.path.exists(image_folder) and len(glob.glob(os.path.join(image_folder, '*.png'))) > 0:
+        if os.path.exists(image_folder) and len(glob.glob(os.path.join(image_folder, '*.JPG'))) > 0:
             intrinsics = load_intrinsics(os.path.join(args.datadir, scene))
             return intrinsics, image_folder
     raise FileNotFoundError(f"No image files found in any of the scene subdirectories: {scene_subdirs}.")
