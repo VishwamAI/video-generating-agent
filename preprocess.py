@@ -1,16 +1,22 @@
 import os
 import cv2
 import numpy as np
+import argparse
+
+# Parse command line arguments
+parser = argparse.ArgumentParser(description="Preprocess frames for training")
+parser.add_argument("--input", type=str, required=True, help="Path to the input directory containing frames")
+args = parser.parse_args()
 
 # Define the directories containing the frames
-train_dir = "/home/ubuntu/CamVid/train"
-val_dir = "/home/ubuntu/CamVid/val"
-test_dir = "/home/ubuntu/CamVid/test"
+train_dir = os.path.join(args.input, "train")
+val_dir = os.path.join(args.input, "val")
+test_dir = os.path.join(args.input, "test")
 
 # Define the output directories for preprocessed frames
-output_train_dir = "/home/ubuntu/CamVid/preprocessed_train"
-output_val_dir = "/home/ubuntu/CamVid/preprocessed_val"
-output_test_dir = "/home/ubuntu/CamVid/preprocessed_test"
+output_train_dir = os.path.join(args.input, "preprocessed_train")
+output_val_dir = os.path.join(args.input, "preprocessed_val")
+output_test_dir = os.path.join(args.input, "preprocessed_test")
 
 os.makedirs(output_train_dir, exist_ok=True)
 os.makedirs(output_val_dir, exist_ok=True)
