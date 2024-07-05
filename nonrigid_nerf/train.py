@@ -927,10 +927,32 @@ def raw2outputs(raw, z_vals, rays_d, raw_noise_std=0, white_bkgd=False, pytest=F
 
     return rgb_map, disp_map, acc_map, opacity_alpha, visibility_weights, depth_map
 
+from torch.utils.data import DataLoader, TensorDataset
+
+# Placeholder dataset and dataloader
+dummy_rays_o = torch.randn(100, 3)  # Example ray origins
+dummy_rays_d = torch.randn(100, 3)  # Example ray directions
+dummy_target_s = torch.randn(100, 3, 64, 64)  # Example target values
+dummy_batch_pixel_indices = torch.randint(0, 10, (100, 2))  # Example batch pixel indices
+dummy_ray_params_H = torch.full((100,), 64)  # Example ray parameter H
+dummy_ray_params_W = torch.full((100,), 64)  # Example ray parameter W
+dummy_ray_params_focal = torch.full((100,), 1.0)  # Example ray parameter focal
+
+train_dataset = TensorDataset(dummy_rays_o, dummy_rays_d, dummy_target_s, dummy_batch_pixel_indices, dummy_ray_params_H, dummy_ray_params_W, dummy_ray_params_focal)
+train_dataloader = DataLoader(train_dataset, batch_size=8, shuffle=True)
+
+# Define the optimizer
+model = NeRF()  # Placeholder model definition
+optimizer = torch.optim.SGD(model.parameters(), lr=0.01)  # Example optimizer
+
+parallelized_training_function = get_parallelized_training_function(
+    model, latents, text_encoder, fine_model=model_fine, ray_bender=ray_bender
+)
+
 for i, data in enumerate(train_dataloader):
-    rays_o, rays_d, target_s, batch_pixel_indices, ray_params = data
+    rays_o, rays_d, target_s, batch_pixel_indices, ray_params_H, ray_params_W, ray_params_focal = data
     rays_o, rays_d, target_s = rays_o.to(device), rays_d.to(device), target_s.to(device)
-    ray_params = {k: v.to(device) if isinstance(v, torch.Tensor) else v for k, v in ray_params.items()}
+    ray_params = {'H': ray_params_H[0].item(), 'W': ray_params_W[0].item(), 'focal': ray_params_focal[0].item()}
 
     optimizer.zero_grad()
     loss = parallelized_training_function(
