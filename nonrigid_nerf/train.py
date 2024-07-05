@@ -230,14 +230,23 @@ class training_wrapper_class(torch.nn.Module):
         ]  # shape: samples x latent_size
 
         # Encode text and genre
-        try:
-            text = dataset_extras["text_descriptions"][batch_pixel_indices[:, 0]]  # Replace with actual text input from dataset
-            genre = dataset_extras["genres"][batch_pixel_indices[:, 0]]  # Replace with actual genre input from dataset
-            text_genre_latents = self.text_encoder.encode(text, genre)
-            additional_pixel_information["text_genre_latents"] = text_genre_latents
-        except Exception as e:
-            logging.error(f"Error encoding text and genre: {e}")
-            additional_pixel_information["text_genre_latents"] = torch.zeros((1, 512))  # Fallback to a zero tensor
+        max_retries = 3
+        retry_delay = 1  # initial delay in seconds
+        for attempt in range(max_retries):
+            try:
+                text = dataset_extras["text_descriptions"][batch_pixel_indices[:, 0]]  # Replace with actual text input from dataset
+                genre = dataset_extras["genres"][batch_pixel_indices[:, 0]]  # Replace with actual genre input from dataset
+                text_genre_latents = self.text_encoder.encode(text, genre)
+                additional_pixel_information["text_genre_latents"] = text_genre_latents
+                break  # exit the loop if encoding is successful
+            except Exception as e:
+                logging.error(f"Error encoding text and genre on attempt {attempt + 1}/{max_retries}: {e}")
+                if attempt < max_retries - 1:
+                    time.sleep(retry_delay)
+                    retry_delay *= 2  # exponential backoff
+                else:
+                    additional_pixel_information["text_genre_latents"] = torch.zeros((1, 512))  # Fallback to a zero tensor
+                    logging.error("Max retries reached. Using fallback zero tensor for text_genre_latents.")
 
         # regularizers setup
         if args.offsets_loss_weight > 0.0 or args.divergence_loss_weight > 0.0:
