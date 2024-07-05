@@ -77,52 +77,7 @@ jobs:
           exit 1
         fi
 
-    - name: Install Kaggle CLI
-      run: |
-        pip install kaggle
-        mkdir -p ~/.kaggle
-        echo "{\"username\":\"${{ secrets.KAGGLE_USERNAME }}\",\"key\":\"${{ secrets.KAGGLE_KEY }}\"}" > ~/.kaggle/kaggle.json
-        chmod 600 ~/.kaggle/kaggle.json
-        echo "Contents of .kaggle directory:"
-        ls -l ~/.kaggle
-        echo "Contents of kaggle.json file:"
-        cat ~/.kaggle/kaggle.json
-        if [ ! -f ~/.kaggle/kaggle.json ]; then
-          echo "kaggle.json file was not created."
-          exit 1
-        fi
-        if ! grep -q '"username":"' ~/.kaggle/kaggle.json; then
-          echo "kaggle.json file does not contain the expected content."
-          exit 1
-        fi
-
-    - name: Download dataset from Kaggle
-      env:
-        KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
-        KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
-      run: |
-        kaggle datasets download -d sauravmaheshkar/nerf-dataset -p preprocessed_data
-        if [ $? -ne 0 ]; then
-          echo "Failed to download dataset from Kaggle."
-          exit 1
-        fi
-        echo "Contents of preprocessed_data directory after download:"
-        ls -l preprocessed_data
-        echo "Contents of nerf-dataset.zip:"
-        unzip -l preprocessed_data/nerf-dataset.zip
-        unzip -o preprocessed_data/nerf-dataset.zip -d preprocessed_data
-        if [ $? -ne 0 ]; then
-          echo "Failed to unzip dataset."
-          exit 1
-        fi
-        echo "Contents of preprocessed_data directory after unzip:"
-        ls -l preprocessed_data
-        if [ -d "preprocessed_data/nerf_llff_data" ] || [ -d "preprocessed_data/nerf_real_360" ] || [ -d "preprocessed_data/nerf_synthetic" ]; then
-          echo "Dataset directories exist."
-        else
-          echo "Dataset directories do not exist."
-          exit 1
-        fi
+    # Removed steps related to Kaggle CLI installation and dataset download
 
     - name: Wait for dataset extraction
       run: |
