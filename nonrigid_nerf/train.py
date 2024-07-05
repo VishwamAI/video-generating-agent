@@ -317,7 +317,7 @@ def batchify_rays(
                 all_ret[k] = []
             all_ret[k].append(ret[k])
 
-    all_ret = {k: torch.cat(all_ret[k], 0) for k in all_ret}
+    all_ret = {k: torch.cat([v for v in all_ret[k]], 0) for k in all_ret}
     return all_ret
 
 print("Defining render_rays function")  # Diagnostic print statement
