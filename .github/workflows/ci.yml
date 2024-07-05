@@ -17,41 +17,29 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
         python-version: 3.8
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Clear Python package cache
       run: |
         pip cache purge
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Verify installation
       run: |
         pip list
         python -c "import matplotlib.pyplot as plt; print('matplotlib installed successfully')"
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Set PYTHONPATH
       run: |
         echo "PYTHONPATH=$PYTHONPATH:/home/runner/work/video-generating-agent/video-generating-agent/nonrigid_nerf" >> $GITHUB_ENV
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Download pre-trained model
       run: |
@@ -60,8 +48,6 @@ jobs:
         echo "Current working directory: $(pwd)"
         echo "Contents of models directory:"
         ls -l models
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Verify model download
       run: |
@@ -71,8 +57,6 @@ jobs:
           echo "Model file does not exist."
           exit 1
         fi
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Create kaggle.json file
       run: |
@@ -85,7 +69,8 @@ jobs:
           exit 1
         fi
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
+        KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
 
     - name: Install Kaggle CLI
       run: |
@@ -102,7 +87,6 @@ jobs:
       env:
         KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
         KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Download dataset from Kaggle
       run: |
@@ -123,8 +107,6 @@ jobs:
         ls -l preprocessed_data
         echo "Contents of nerf-dataset.zip:"
         unzip -l preprocessed_data/nerf-dataset.zip
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Unzip dataset
       run: |
@@ -150,8 +132,6 @@ jobs:
           echo "Dataset directories do not exist."
           exit 1
         fi
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Wait for dataset extraction
       run: |
@@ -194,57 +174,41 @@ jobs:
           echo "Dataset directories do not exist or are empty."
           exit 1
         fi
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: List contents of preprocessed_data directory
       run: |
         echo "Listing contents of preprocessed_data directory:"
         ls -l preprocessed_data
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: List contents of nerf_llff_data subdirectories
       run: |
         echo "Listing contents of nerf_llff_data subdirectories:"
         ls -lR preprocessed_data/nerf_llff_data
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: List all subdirectories within nerf_llff_data
       run: |
         echo "Listing all subdirectories within nerf_llff_data:"
         find preprocessed_data/nerf_llff_data -type d
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: List contents of nerf_llff_data directory
       run: |
         echo "Listing contents of nerf_llff_data directory:"
         ls -l preprocessed_data/nerf_llff_data
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: List contents of nerf_real_360 directory
       run: |
         echo "Listing contents of nerf_real_360 directory:"
         ls -l preprocessed_data/nerf_real_360
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: List contents of nerf_synthetic directory
       run: |
         echo "Listing contents of nerf_synthetic directory:"
         ls -l preprocessed_data/nerf_synthetic
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: List contents of images directories in nerf_llff_data
       run: |
         echo "Listing contents of images directories in nerf_llff_data:"
         ls -l preprocessed_data/nerf_llff_data/trex/images/
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Verify presence of image files in nerf_llff_data directory
       run: |
@@ -255,17 +219,11 @@ jobs:
           echo "Image files do not exist in nerf_llff_data directory."
           exit 1
         fi
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Train model
       run: |
         python nonrigid_nerf/train.py --config nonrigid_nerf/configs/training_config.txt
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Run tests
       run: |
         python -m unittest discover -s tests
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
