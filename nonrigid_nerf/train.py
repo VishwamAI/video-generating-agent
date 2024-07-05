@@ -1329,7 +1329,7 @@ def main_function(args):
         )
         dataset_extras = _get_multi_view_helper_mappings(images.shape[0], args.datadir)
         intrinsics_dict, image_folder = get_full_resolution_intrinsics(args, dataset_extras)
-        intrinsics = (intrinsics_dict["height"], intrinsics_dict["width"])
+        intrinsics = {view: {"height": intrinsics_dict["height"], "width": intrinsics_dict["width"], "focal_x": None, "focal_y": None, "center_x": None, "center_y": None} for view in dataset_extras["raw_views"]}
 
         hwf = poses[0, :3, -1]
         poses = poses[:, :3, :4]
@@ -1348,8 +1348,14 @@ def main_function(args):
                 camera["focal_y"] = hwf[2]
             else:
                 camera["focal_y"] /= args.factor
-            camera["center_x"] /= args.factor
-            camera["center_y"] /= args.factor
+            if camera["center_x"] is None:
+                camera["center_x"] = images.shape[2] / 2
+            else:
+                camera["center_x"] /= args.factor
+            if camera["center_y"] is None:
+                camera["center_y"] = images.shape[1] / 2
+            else:
+                camera["center_y"] /= args.factor
         # modify "intrinsics" mapping to use viewid instead of raw_view
         for raw_view in list(intrinsics.keys()):
             viewid = dataset_extras["rawview_to_viewid"][raw_view]
