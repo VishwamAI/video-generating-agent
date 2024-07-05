@@ -128,6 +128,8 @@ jobs:
         fi
         if [ -d "preprocessed_data/nerf_llff_data" ] || [ -d "preprocessed_data/nerf_real_360" ] || [ -d "preprocessed_data/nerf_synthetic" ]; then
           echo "Dataset directories exist."
+          echo "Listing all subdirectories within preprocessed_data/nerf_llff_data:"
+          find preprocessed_data/nerf_llff_data -type d
         else
           echo "Dataset directories do not exist."
           exit 1
