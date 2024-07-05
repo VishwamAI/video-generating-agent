@@ -313,6 +313,7 @@ def render_rays(
     Args:
       ray_batch: array of shape [batch_size, ...]. All information necessary
         for sampling along a ray, including: ray origin, ray direction, min
+    """
 
 
 class training_wrapper_class(torch.nn.Module):
@@ -551,29 +552,71 @@ def render(
       far: float or array of shape [batch_size]. Farthest distance for a ray.
       use_viewdirs: bool. If True, use viewing direction of a point in space in model.
       c2w_staticcam: array of shape [3, 4]. If not None, use this transformation matrix for
-       camera while using other c2w argument for viewing directions.
+        camera while using other c2w argument for viewing directions.
     Returns:
       rgb_map: [batch_size, 3]. Predicted RGB values for rays.
       disp_map: [batch_size]. Disparity map. Inverse of depth.
       acc_map: [batch_size]. Accumulated opacity (alpha) along a ray.
       extras: dict with everything returned by render_rays().
     """
-      rays: array of shape [2, batch_size, 3]. Ray origin and direction for
-        each example in batch.
-      c2w: array of shape [3, 4]. Camera-to-world transformation matrix.
-      ndc: bool. If True, represent ray origin, direction in NDC coordinates.
-      near: float or array of shape [batch_size]. Nearest distance for a ray.
-      far: float or array of shape [batch_size]. Farthest distance for a ray.
-      use_viewdirs: bool. If True, use viewing direction of a point in space in model.
-      c2w_staticcam: array of shape [3, 4]. If not None, use this transformation matrix for
-       camera while using other c2w argument for viewing directions.
-    Returns:
-      rgb_map: [batch_size, 3]. Predicted RGB values for rays.
-      disp_map: [batch_size]. Disparity map. Inverse of depth.
-      acc_map: [batch_size]. Accumulated opacity (alpha) along a ray.
-      extras: dict with everything returned by render_rays().
-    """
+    device = rays_o.device if rays_o.is_cuda else 'cpu'
 
+    if use_viewdirs:
+        # provide ray directions as input
+        viewdirs = rays_d
+        if c2w_staticcam is not None:
+            # special case to visualize effect of viewdirs
+            if c2w is None:
+                raise RuntimeError(
+                    "seems inconsistent, this should only be used for full-image rendering -- need to take care of additional_pixel_information otherwise"
+                )
+            raise RuntimeError(
+                "need to pull this call to get_rays out to render_path() for gpu parallelization to work"
+            )
+            # remove H, W, focal. ray_params is intrinsics
+            rays_o, rays_d = get_rays(H, W, focal, c2w_staticcam, ray_params)
+            rays_o = rays_o.reshape(-1, 3)
+            rays_d = rays_d.reshape(-1, 3)
+        viewdirs = viewdirs / torch.norm(viewdirs, dim=-1, keepdim=True)
+        viewdirs = torch.reshape(viewdirs, [-1, 3]).float()
+
+    sh = rays_d.shape  # [..., 3]
+    if ndc:
+        # for forward facing scenes
+        rays_o, rays_d = ndc_rays(ray_params['H'], ray_params['W'], ray_params['focal'], 1.0, rays_o, rays_d)
+
+    # Create ray batch
+    rays_o = torch.reshape(rays_o, [-1, 3]).float()
+    rays_d = torch.reshape(rays_d, [-1, 3]).float()
+
+    near, far = (
+        near * torch.ones_like(rays_d[..., :1], device=device),
+        far * torch.ones_like(rays_d[..., :1], device=device),
+    )
+    rays = torch.cat([rays_o, rays_d, near, far], -1)
+    if use_viewdirs:
+        rays = torch.cat([rays, viewdirs], -1)
+
+    # Render and reshape
+    additional_pixel_information = {
+        "ray_bending_latents": additional_pixel_information["ray_bending_latents"],
+        "text_genre_latents": additional_pixel_information["text_genre_latents"]
+    }
+    all_ret = batchify_rays(
+        rays,
+        additional_pixel_information,
+        chunk=chunk,
+        detailed_output=detailed_output,
+        **kwargs,
+    )
+    for k in all_ret:
+        k_sh = list(sh[:-1]) + list(all_ret[k].shape[1:])
+        all_ret[k] = torch.reshape(all_ret[k], k_sh)
+
+    k_extract = ["rgb_map", "disp_map", "acc_map"]
+    ret_list = [all_ret[k] for k in k_extract]
+    ret_dict = {k: all_ret[k] for k in all_ret if k not in k_extract}
+    return ret_list + [ret_dict]
     device = rays_o.device if rays_o.is_cuda else 'cpu'
 
     if use_viewdirs:
@@ -1377,10 +1420,7 @@ def config_parser():
         help="log2 of max freq for positional encoding (3D location)",
     )
     parser.add_argument(
-        "--multires_views",
-        type=int,
-        default=4,
-        help="log2 of max freq for positional encoding (2D direction)",
+        "--multires_views", type=int, default=4, help="log2 of max freq for positional encoding (2D direction)",
     )
     parser.add_argument(
         "--raw_noise_std",
@@ -1471,7 +1511,7 @@ def get_rays_np(pose, intrinsics):
 def _get_multi_view_helper_mappings(num_images, datadir):
     imgnames = range(num_images)
     extras = {}
-    
+
     multi_view_mapping = os.path.join(datadir, "image_to_camera_id_and_timestep.json")
     if os.path.exists(multi_view_mapping):
         extras["is_multiview"] = True
@@ -1514,8 +1554,8 @@ def _get_multi_view_helper_mappings(num_images, datadir):
     ]
 
     return extras
-    
-  
+
+
 def get_full_resolution_intrinsics(args, dataset_extras):
     if args.dataset_type == "llff":
         images, poses, bds, render_poses = load_llff_data(args.datadir, args.factor)
