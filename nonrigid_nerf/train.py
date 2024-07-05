@@ -278,7 +278,12 @@ def render_rays(
       ray_batch: array of shape [batch_size, ...]. All information necessary
         for sampling along a ray, including: ray origin, ray direction, min
     """
-    # Function implementation here
+    # Temporary implementation to return expected keys with placeholder values
+    rgb = torch.zeros((ray_batch.shape[0], 3))
+    disp = torch.zeros((ray_batch.shape[0]))
+    acc = torch.zeros((ray_batch.shape[0]))
+    extras = {}
+    return {'rgb': rgb, 'disp': disp, 'acc': acc, 'extras': extras}
 
 def batchify_rays(
     rays_flat,
