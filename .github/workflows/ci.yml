@@ -62,7 +62,7 @@ jobs:
       run: |
         pip install kaggle
         mkdir -p ~/.kaggle
-        echo "{\"username\":\"${KAGGLE_USERNAME}\",\"key\":\"${KAGGLE_KEY}\"}" > ~/.kaggle/kaggle.json
+        echo "{\"username\":\"${{ secrets.KAGGLE_USERNAME }}\",\"key\":\"${{ secrets.KAGGLE_KEY }}\"}" > ~/.kaggle/kaggle.json
         chmod 600 ~/.kaggle/kaggle.json
         echo "Contents of .kaggle directory:"
         ls -l ~/.kaggle
