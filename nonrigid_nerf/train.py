@@ -17,6 +17,39 @@ import torch.nn.functional as F
 from tqdm import tqdm, trange
 import matplotlib.pyplot as plt
 
+import argparse
+
+# Argument parsing
+parser = argparse.ArgumentParser(description="Train a NeRF model.")
+parser.add_argument("--debug", action="store_true", help="Enable debug mode")
+parser.add_argument("--chunk", type=int, default=1024*32, help="Chunk size for processing rays")
+parser.add_argument("--rootdir", type=str, default=os.path.expanduser("~"), help="Root directory for logs and checkpoints")
+parser.add_argument("--expname", type=str, default="experiment", help="Experiment name")
+parser.add_argument("--datadir", type=str, default=os.path.expanduser("~"), help="Data directory")
+parser.add_argument("--multires", type=int, default=10, help="Number of frequencies for positional encoding")
+parser.add_argument("--i_embed", type=int, default=0, help="Set 0 for default positional encoding, -1 for none")
+parser.add_argument("--ray_bending", type=str, default=None, help="Type of ray bending to use, set to None to disable")
+parser.add_argument("--time_conditioned_baseline", action="store_true", help="Enable time conditioning in the baseline model")
+parser.add_argument("--use_viewdirs", action="store_true", help="Use view directions as input features")
+parser.add_argument("--approx_nonrigid_viewdirs", action="store_true", help="Use approximation for non-rigid view directions")
+parser.add_argument("--N_importance", type=int, default=64, help="Number of additional samples for importance sampling")
+parser.add_argument("--N_samples", type=int, default=64, help="Number of samples for ray rendering")
+parser.add_argument("--netdepth", type=int, default=8, help="Depth of the neural network")
+parser.add_argument("--netwidth", type=int, default=256, help="Width of the neural network")
+parser.add_argument("--netdepth_fine", type=int, default=8, help="Depth of the fine neural network")
+parser.add_argument("--netwidth_fine", type=int, default=256, help="Width of the fine neural network")
+parser.add_argument("--ray_bending_latent_size", type=int, default=32, help="Size of the latent space for ray bending")
+parser.add_argument("--lrate", type=float, default=0.001, help="Learning rate for the optimizer")
+parser.add_argument("--ft_path", type=str, default=None, help="Path to a fine-tuning checkpoint")
+parser.add_argument("--perturb", type=float, default=0.0, help="Set 0 or 1 to perturb the ray sampling points for anti-aliasing")
+parser.add_argument("--raw_noise_std", type=float, default=0.0, help="Standard deviation of noise added to raw output for regularization")
+parser.add_argument("--dataset_type", type=str, default="llff", help="Type of dataset to use (e.g., llff, blender)")
+parser.add_argument("--no_ndc", action="store_true", help="Disable normalized device coordinates (NDC)")
+parser.add_argument("--offsets_loss_weight", type=float, default=0.0, help="Weight for the offsets loss")
+parser.add_argument("--divergence_loss_weight", type=float, default=0.0, help="Weight for the divergence loss")
+parser.add_argument("--rigidity_loss_weight", type=float, default=0.0, help="Weight for the rigidity loss")
+args = parser.parse_args()
+
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s', handlers=[
     logging.FileHandler("training.log"),
@@ -32,6 +65,14 @@ from scripts.text_encoder import TextEncoder
 #from nonrigid_nerf.load_llff import load_llff_data_multi_view
 from nonrigid_nerf.load_llff import load_llff_data
 
+class RayBender:
+    def __init__(self):
+        pass
+
+    def bend_rays(self, rays):
+        return rays
+
+ray_bender = RayBender()
 
 device = torch.device("cpu")
 DEBUG = True  # gets overwritten by args.debug
@@ -234,6 +275,7 @@ def batchify_rays(
             ],
         }
 
+        print("Calling render_rays function")  # Diagnostic print statement
         ret = render_rays(
             rays_flat[i : i + chunk],
             additional_pixel_information=relevant_additional_pixel_info,
@@ -247,6 +289,30 @@ def batchify_rays(
 
     all_ret = {k: torch.cat(all_ret[k], 0) for k in all_ret}
     return all_ret
+
+print("Defining render_rays function")  # Diagnostic print statement
+def render_rays(
+    ray_batch,
+    network_fn,
+    network_query_fn,
+    N_samples,
+    retraw=False,
+    lindisp=False,
+    perturb=0.0,
+    N_importance=0,
+    network_fine=None,
+    white_bkgd=False,
+    raw_noise_std=0.0,
+    additional_pixel_information=None,
+    detailed_output=False,
+    verbose=False,
+    pytest=False,
+    **dummy_kwargs,
+):
+    """Volumetric rendering.
+    Args:
+      ray_batch: array of shape [batch_size, ...]. All information necessary
+        for sampling along a ray, including: ray origin, ray direction, min
 
 
 class training_wrapper_class(torch.nn.Module):
@@ -492,6 +558,21 @@ def render(
       acc_map: [batch_size]. Accumulated opacity (alpha) along a ray.
       extras: dict with everything returned by render_rays().
     """
+      rays: array of shape [2, batch_size, 3]. Ray origin and direction for
+        each example in batch.
+      c2w: array of shape [3, 4]. Camera-to-world transformation matrix.
+      ndc: bool. If True, represent ray origin, direction in NDC coordinates.
+      near: float or array of shape [batch_size]. Nearest distance for a ray.
+      far: float or array of shape [batch_size]. Farthest distance for a ray.
+      use_viewdirs: bool. If True, use viewing direction of a point in space in model.
+      c2w_staticcam: array of shape [3, 4]. If not None, use this transformation matrix for
+       camera while using other c2w argument for viewing directions.
+    Returns:
+      rgb_map: [batch_size, 3]. Predicted RGB values for rays.
+      disp_map: [batch_size]. Disparity map. Inverse of depth.
+      acc_map: [batch_size]. Accumulated opacity (alpha) along a ray.
+      extras: dict with everything returned by render_rays().
+    """
 
     device = rays_o.device if rays_o.is_cuda else 'cpu'
 
@@ -691,7 +772,7 @@ def render_path(
 
 
 def create_nerf(args, autodecoder_variables=None, ignore_optimizer=False):
-    """Instantiate NeRF's MLP model."""
+    """Instantiate NeRF\'s MLP model."""
 
     grad_vars = []
 
@@ -799,6 +880,7 @@ def create_nerf(args, autodecoder_variables=None, ignore_optimizer=False):
 
     start = 0
     logdir = os.path.join(args.rootdir, args.expname, "logs/")
+    os.makedirs(logdir, exist_ok=True)
     expname = args.expname
 
     ##########################
@@ -943,11 +1025,29 @@ train_dataloader = DataLoader(train_dataset, batch_size=8, shuffle=True)
 
 # Define the optimizer
 model = NeRF()  # Placeholder model definition
+model_fine = NeRF()  # Placeholder fine model definition
 optimizer = torch.optim.SGD(model.parameters(), lr=0.01)  # Example optimizer
+
+# Define placeholder latents
+latents = [torch.randn(32) for _ in range(10)]  # Example latents with 10 elements, each of size 32
+
+# Initialize text_encoder
+text_encoder = TextEncoder()
+
+# Call create_nerf to initialize render_kwargs_train and other variables
+render_kwargs_train, render_kwargs_test, start, grad_vars, optimizer, text_encoder = create_nerf(args)
 
 parallelized_training_function = get_parallelized_training_function(
     model, latents, text_encoder, fine_model=model_fine, ray_bender=ray_bender
 )
+
+dataset_extras = {
+    "imageid_to_timestepid": list(range(10)),  # Placeholder with a range of valid indices
+    "text_descriptions": ["sample description"] * 10,  # Placeholder text descriptions
+    "genres": ["sample genre"] * 10,  # Placeholder genres
+    "raw_timesteps": list(range(10))  # Placeholder raw timesteps
+}  # Initialize dataset_extras with placeholder values
+global_step = 0  # Initialize global_step
 
 for i, data in enumerate(train_dataloader):
     rays_o, rays_d, target_s, batch_pixel_indices, ray_params_H, ray_params_W, ray_params_focal = data
@@ -970,6 +1070,8 @@ for i, data in enumerate(train_dataloader):
     )
     loss.backward()
     optimizer.step()
+
+    global_step += 1  # Increment global_step
 
 
 def render_rays(
