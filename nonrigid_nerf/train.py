@@ -23,6 +23,7 @@ import argparse
 parser = argparse.ArgumentParser(description="Train a NeRF model.")
 parser.add_argument("--debug", action="store_true", help="Enable debug mode")
 parser.add_argument("--chunk", type=int, default=1024*32, help="Chunk size for processing rays")
+parser.add_argument("--netchunk", type=int, default=1024*64, help="Chunk size for network processing")
 parser.add_argument("--rootdir", type=str, default=os.path.expanduser("~"), help="Root directory for logs and checkpoints")
 parser.add_argument("--expname", type=str, default="experiment", help="Experiment name")
 parser.add_argument("--datadir", type=str, default=os.path.expanduser("~"), help="Data directory")
@@ -278,12 +279,30 @@ def render_rays(
       ray_batch: array of shape [batch_size, ...]. All information necessary
         for sampling along a ray, including: ray origin, ray direction, min
     """
-    # Basic implementation to return Tensors
-    rgb = torch.randn((ray_batch.shape[0], 3))
-    disp = torch.randn((ray_batch.shape[0]))
-    acc = torch.randn((ray_batch.shape[0]))
-    extras = {'sample': torch.randn((ray_batch.shape[0], 3))}
-    return {'rgb': rgb, 'disp': disp, 'acc': acc, 'extras': extras}
+    # Extract ray origin, direction, near, and far from ray_batch
+    rays_o, rays_d = ray_batch[:, 0:3], ray_batch[:, 3:6]
+    near, far = ray_batch[:, 6:7], ray_batch[:, 7:8]
+
+    # Sample points along the ray
+    t_vals = torch.linspace(0.0, 1.0, steps=N_samples)
+    z_vals = near * (1.0 - t_vals) + far * t_vals
+    z_vals = z_vals.expand([ray_batch.shape[0], N_samples])
+
+    # Perturb sampling points
+    if perturb > 0.0:
+        mids = 0.5 * (z_vals[..., 1:] + z_vals[..., :-1])
+        upper = torch.cat([mids, z_vals[..., -1:]], -1)
+        lower = torch.cat([z_vals[..., :1], mids], -1)
+        t_rand = torch.rand(z_vals.shape)
+        z_vals = lower + (upper - lower) * t_rand
+
+    pts = rays_o[..., None, :] + rays_d[..., None, :] * z_vals[..., :, None]
+
+    # Run network
+    raw = network_query_fn(pts, rays_d, additional_pixel_information, network_fn)
+    rgb_map, disp_map, acc_map, extras = raw2outputs(raw, z_vals, rays_d, raw_noise_std, white_bkgd, pytest)
+
+    return {'rgb': rgb_map, 'disp': disp_map, 'acc': acc_map, 'extras': extras}
 
 def batchify_rays(
     rays_flat,
@@ -378,21 +397,24 @@ class training_wrapper_class(torch.nn.Module):
         # Encode text and genre
         max_retries = 3
         retry_delay = 1  # initial delay in seconds
-        for attempt in range(max_retries):
-            try:
-                text = dataset_extras["text_descriptions"][batch_pixel_indices[:, 0]]  # Replace with actual text input from dataset
-                genre = dataset_extras["genres"][batch_pixel_indices[:, 0]]  # Replace with actual genre input from dataset
-                text_genre_latents = self.text_encoder.encode(text, genre)
-                additional_pixel_information["text_genre_latents"] = text_genre_latents
-                break  # exit the loop if encoding is successful
-            except Exception as e:
-                logging.error(f"Error encoding text and genre on attempt {attempt + 1}/{max_retries}: {e}")
-                if attempt < max_retries - 1:
-                    time.sleep(retry_delay)
-                    retry_delay *= 2  # exponential backoff
-                else:
-                    additional_pixel_information["text_genre_latents"] = torch.zeros((1, 512))  # Fallback to a zero tensor
-                    logging.error("Max retries reached. Using fallback zero tensor for text_genre_latents.")
+        text_genre_latents_list = []
+        for idx in range(batch_pixel_indices.shape[0]):
+            for attempt in range(max_retries):
+                try:
+                    text = dataset_extras["text_descriptions"][batch_pixel_indices[idx, 0]]  # Replace with actual text input from dataset
+                    genre = dataset_extras["genres"][batch_pixel_indices[idx, 0]]  # Replace with actual genre input from dataset
+                    text_genre_latents = self.text_encoder.encode(text, genre)
+                    text_genre_latents_list.append(text_genre_latents)
+                    break  # exit the loop if encoding is successful
+                except Exception as e:
+                    logging.error(f"Error encoding text and genre on attempt {attempt + 1}/{max_retries}: {e}")
+                    if attempt < max_retries - 1:
+                        time.sleep(retry_delay)
+                        retry_delay *= 2  # exponential backoff
+                    else:
+                        text_genre_latents_list.append(torch.zeros((1, 512)))  # Fallback to a zero tensor
+                        logging.error("Max retries reached. Using fallback zero tensor for text_genre_latents.")
+        additional_pixel_information["text_genre_latents"] = torch.cat(text_genre_latents_list, dim=0)
 
         # regularizers setup
         if args.offsets_loss_weight > 0.0 or args.divergence_loss_weight > 0.0:
