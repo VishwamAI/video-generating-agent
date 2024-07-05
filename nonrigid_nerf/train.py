@@ -1090,7 +1090,7 @@ def raw2outputs(raw, z_vals, rays_d, raw_noise_std=0, white_bkgd=False, pytest=F
         * torch.cumprod(
             torch.cat(
                 [
-                    torch.ones((opacity_alpha.shape[0], 1), device=device),
+                    torch.ones((opacity_alpha.shape[0], 1), device='cpu'),
                     1.0 - opacity_alpha + 1e-10,
                 ],
                 -1,
