@@ -122,6 +122,8 @@ jobs:
     - name: Wait for dataset extraction
       run: |
         for i in {1..480}; do  # Increased timeout to 480 iterations
+          echo "Current time: $(date)"
+          echo "Size of nerf-dataset.zip: $(stat -c%s preprocessed_data/nerf-dataset.zip) bytes"
           if [ -d "preprocessed_data/nerf_llff_data/trex/images" ]; then
             echo "Dataset extraction complete."
             break
@@ -141,7 +143,6 @@ jobs:
           echo "Final contents of nerf_llff_data directory:"
           ls -l preprocessed_data/nerf_llff_data
           exit 1
-        fi
 
     - name: Verify dataset download
       run: |
