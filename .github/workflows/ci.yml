@@ -64,6 +64,10 @@ jobs:
         mkdir -p ~/.kaggle
         echo '{"username":"${{ secrets.KAGGLE_USERNAME }}","key":"${{ secrets.KAGGLE_KEY }}"}' > ~/.kaggle/kaggle.json
         chmod 600 ~/.kaggle/kaggle.json
+        echo "Contents of .kaggle directory:"
+        ls -l ~/.kaggle
+        echo "Contents of kaggle.json file:"
+        cat ~/.kaggle/kaggle.json
 
     - name: Download dataset from Kaggle
       env:
