@@ -29,7 +29,7 @@ from scripts.text_encoder import TextEncoder
 from nonrigid_nerf.load_llff import load_llff_data
 
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = torch.device("cpu")
 DEBUG = True  # gets overwritten by args.debug
 
 def ndc_rays(H, W, focal, near, rays_o, rays_d):
@@ -631,7 +631,7 @@ def create_nerf(args, autodecoder_variables=None, ignore_optimizer=False):
     if args.ray_bending is not None and args.ray_bending != "None":
         ray_bender = ray_bending(
             input_ch, args.ray_bending_latent_size, args.ray_bending, embed_fn
-        ).cuda()
+        )
         grad_vars += list(ray_bender.parameters())
     else:
         ray_bender = None
@@ -671,7 +671,7 @@ def create_nerf(args, autodecoder_variables=None, ignore_optimizer=False):
         num_ray_samples=args.N_samples,
         approx_nonrigid_viewdirs=args.approx_nonrigid_viewdirs,
         time_conditioned_baseline=args.time_conditioned_baseline,
-    ).cuda()
+    )
     grad_vars += list(
         model.parameters()
     )  # model.parameters() does not contain ray_bender parameters
@@ -692,7 +692,7 @@ def create_nerf(args, autodecoder_variables=None, ignore_optimizer=False):
             num_ray_samples=args.N_samples,
             approx_nonrigid_viewdirs=args.approx_nonrigid_viewdirs,
             time_conditioned_baseline=args.time_conditioned_baseline,
-        ).cuda()
+        )
         grad_vars += list(model_fine.parameters())
 
     # Instantiate the TextEncoder
@@ -1991,6 +1991,10 @@ if __name__ == "__main__":
     parser = config_parser()
     args = parser.parse_args()
 
+    if args.rootdir is None:
+        args.rootdir = "/default/rootdir"
+    if args.expname is None:
+        args.expname = "default_expname"
     results_folder = os.path.join(args.rootdir, args.expname, "results/")
     create_folder(results_folder)
     if args.no_reload:
