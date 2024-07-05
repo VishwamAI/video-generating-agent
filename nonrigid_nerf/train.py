@@ -229,8 +229,8 @@ def run_network(
     text_genre_latents = additional_pixel_information[
         "text_genre_latents"
     ]  # N_rays x latent_size
-    text_genre_latents = text_genre_latents[:, None, :].expand(
-        (inputs.shape[0], inputs.shape[1], text_genre_latents.shape[-1])
+    text_genre_latents = text_genre_latents[:, None, :, :].expand(
+        (inputs.shape[0], inputs.shape[1], text_genre_latents.shape[2], text_genre_latents.shape[3])
     )  # N_rays x N_samples_per_ray x latent_size
     text_genre_latents = torch.reshape(
         text_genre_latents, [-1, text_genre_latents.shape[-1]]
