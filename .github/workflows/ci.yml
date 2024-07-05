@@ -111,24 +111,24 @@ jobs:
     - name: Unzip dataset
       run: |
         echo "Starting dataset unzip..."
-        unzip -o preprocessed_data/nerf-dataset.zip -d preprocessed_data
+        unzip -o preprocessed_data/nerf-dataset.zip -d preprocessed_data/nerf_llff_data
         if [ $? -ne 0 ]; then
           echo "Failed to unzip dataset."
           exit 1
         fi
         echo "Contents of preprocessed_data directory after unzip:"
         ls -l preprocessed_data
-        if [ -d "preprocessed_data/nerf_llff_data/nerf_llff_data" ]; then
+        if [ -d "preprocessed_data/nerf_llff_data" ]; then
           echo "Dataset unzip complete."
           echo "Contents of nerf_llff_data directory after unzip:"
-          ls -l preprocessed_data/nerf_llff_data/nerf_llff_data
-          echo "Contents of nerf_llff_data/nerf_llff_data/trex directory after unzip:"
-          ls -l preprocessed_data/nerf_llff_data/nerf_llff_data/trex
+          ls -l preprocessed_data/nerf_llff_data
+          echo "Contents of nerf_llff_data/trex directory after unzip:"
+          ls -l preprocessed_data/nerf_llff_data/trex
         else
           echo "nerf_llff_data directory does not exist."
           exit 1
         fi
-        if [ -d "preprocessed_data/nerf_llff_data/nerf_llff_data/trex/images" ]; then
+        if [ -d "preprocessed_data/nerf_llff_data/trex/images" ]; then
           echo "trex/images directory exists."
         else
           echo "trex/images directory does not exist."
