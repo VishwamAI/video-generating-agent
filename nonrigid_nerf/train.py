@@ -210,7 +210,7 @@ def run_network(
     )  # N_rays * N_samples_per_ray x 3
     embedded = embed_fn(inputs_flat)
 
-    if viewdirs is not None:
+    if viewdirs is not None and embeddirs_fn is not None:
         input_dirs = viewdirs[:, None].expand(inputs.shape)
         input_dirs_flat = torch.reshape(input_dirs, [-1, input_dirs.shape[-1]])
         embedded_dirs = embeddirs_fn(input_dirs_flat)
@@ -229,8 +229,8 @@ def run_network(
     text_genre_latents = additional_pixel_information[
         "text_genre_latents"
     ]  # N_rays x latent_size
-    text_genre_latents = text_genre_latents[:, None].expand(
-        (inputs.shape[0], inputs.shape[1], text_genre_latents.shape[-1])
+    text_genre_latents = text_genre_latents[:, None, :, :].expand(
+        (inputs.shape[0], inputs.shape[1], text_genre_latents.shape[1], text_genre_latents.shape[2])
     )  # N_rays x N_samples_per_ray x latent_size
     text_genre_latents = torch.reshape(
         text_genre_latents, [-1, text_genre_latents.shape[-1]]
