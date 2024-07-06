@@ -441,10 +441,12 @@ class training_wrapper_class(torch.nn.Module):
         # Check if 'text_descriptions' and 'genres' keys exist in dataset_extras
         if 'text_descriptions' not in dataset_extras or 'genres' not in dataset_extras:
             logging.error("'text_descriptions' or 'genres' key is missing in dataset_extras")
+            print(f"Keys in dataset_extras: {dataset_extras.keys()}")
         else:
             for idx in range(batch_pixel_indices.shape[0]):
                 for attempt in range(max_retries):
                     try:
+                        print(f"Accessing text_descriptions with index {batch_pixel_indices[idx, 0]}")
                         text = dataset_extras["text_descriptions"][batch_pixel_indices[idx, 0]]  # Replace with actual text input from dataset
                         genre = dataset_extras["genres"][batch_pixel_indices[idx, 0]]  # Replace with actual genre input from dataset
                         text_genre_latents = self.text_encoder.encode(text, genre)
