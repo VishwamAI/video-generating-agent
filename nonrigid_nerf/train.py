@@ -19,6 +19,14 @@ import matplotlib.pyplot as plt
 
 import argparse
 
+def img2mse(x, y):
+    print(f"Shape of predicted image (x): {x.shape}")
+    print(f"Shape of target image (y): {y.shape}")
+    return torch.mean((x - y) ** 2)
+
+def mse2psnr(x):
+    return -10.0 * torch.log10(x)
+
 # Argument parsing
 parser = argparse.ArgumentParser(description="Train a NeRF model.")
 parser.add_argument("--debug", action="store_true", help="Enable debug mode")
@@ -329,7 +337,9 @@ def render_rays(
 
     # Run network
     raw = network_query_fn(pts, rays_d, additional_pixel_information, network_fn)
-    rgb_map, disp_map, acc_map, extras = raw2outputs(raw, z_vals, rays_d, raw_noise_std, white_bkgd, pytest)
+    outputs = raw2outputs(raw, z_vals, rays_d, raw_noise_std, white_bkgd, pytest)
+    rgb_map, disp_map, acc_map = outputs[:3]
+    extras = outputs[3]
 
     return {'rgb': rgb_map, 'disp': disp_map, 'acc': acc_map, 'extras': extras}
 
@@ -427,22 +437,27 @@ class training_wrapper_class(torch.nn.Module):
         max_retries = 3
         retry_delay = 1  # initial delay in seconds
         text_genre_latents_list = []
-        for idx in range(batch_pixel_indices.shape[0]):
-            for attempt in range(max_retries):
-                try:
-                    text = dataset_extras["text_descriptions"][batch_pixel_indices[idx, 0]]  # Replace with actual text input from dataset
-                    genre = dataset_extras["genres"][batch_pixel_indices[idx, 0]]  # Replace with actual genre input from dataset
-                    text_genre_latents = self.text_encoder.encode(text, genre)
-                    text_genre_latents_list.append(text_genre_latents)
-                    break  # exit the loop if encoding is successful
-                except Exception as e:
-                    logging.error(f"Error encoding text and genre on attempt {attempt + 1}/{max_retries}: {e}")
-                    if attempt < max_retries - 1:
-                        time.sleep(retry_delay)
-                        retry_delay *= 2  # exponential backoff
-                    else:
-                        text_genre_latents_list.append(torch.zeros((1, 512)))  # Fallback to a zero tensor
-                        logging.error("Max retries reached. Using fallback zero tensor for text_genre_latents.")
+
+        # Check if 'text_descriptions' and 'genres' keys exist in dataset_extras
+        if 'text_descriptions' not in dataset_extras or 'genres' not in dataset_extras:
+            logging.error("'text_descriptions' or 'genres' key is missing in dataset_extras")
+        else:
+            for idx in range(batch_pixel_indices.shape[0]):
+                for attempt in range(max_retries):
+                    try:
+                        text = dataset_extras["text_descriptions"][batch_pixel_indices[idx, 0]]  # Replace with actual text input from dataset
+                        genre = dataset_extras["genres"][batch_pixel_indices[idx, 0]]  # Replace with actual genre input from dataset
+                        text_genre_latents = self.text_encoder.encode(text, genre)
+                        text_genre_latents_list.append(text_genre_latents)
+                        break  # exit the loop if encoding is successful
+                    except Exception as e:
+                        logging.error(f"Error encoding text and genre on attempt {attempt + 1}/{max_retries}: {e}")
+                        if attempt < max_retries - 1:
+                            time.sleep(retry_delay)
+                            retry_delay *= 2  # exponential backoff
+                        else:
+                            text_genre_latents_list.append(torch.zeros((1, 512)))  # Fallback to a zero tensor
+                            logging.error("Max retries reached. Using fallback zero tensor for text_genre_latents.")
         additional_pixel_information["text_genre_latents"] = torch.cat(text_genre_latents_list, dim=0)
 
         # regularizers setup
@@ -464,8 +479,11 @@ class training_wrapper_class(torch.nn.Module):
         )  # rays need to be split for parallel call
 
         # data loss
-        img_loss = img2mse(rgb, target_s, N_rays)
-        trans = extras["raw"][..., -1]
+        img_loss = img2mse(rgb.unsqueeze(-1).unsqueeze(-1).expand(-1, -1, target_s.shape[2], target_s.shape[3]), target_s)
+        if "raw" in extras:
+            trans = extras["raw"][..., -1]
+        else:
+            trans = torch.zeros_like(rgb[..., 0])  # Default value or appropriate handling
         loss = img_loss  # shape: N_rays
         psnr = mse2psnr(img_loss)
 
@@ -668,10 +686,11 @@ def render(
         **kwargs,
     )
     for k in all_ret:
+        print(f"Key in all_ret: {k}")  # Diagnostic print statement
         k_sh = list(sh[:-1]) + list(all_ret[k].shape[1:])
         all_ret[k] = torch.reshape(all_ret[k], k_sh)
 
-    k_extract = ["rgb_map", "disp_map", "acc_map"]
+    k_extract = ["rgb", "disp", "acc"]
     ret_list = [all_ret[k] for k in k_extract]
     ret_dict = {k: all_ret[k] for k in all_ret if k not in k_extract}
     return ret_list + [ret_dict]
@@ -726,10 +745,11 @@ def render(
         **kwargs,
     )
     for k in all_ret:
+        print(f"Key in all_ret: {k}")  # Diagnostic print statement
         k_sh = list(sh[:-1]) + list(all_ret[k].shape[1:])
         all_ret[k] = torch.reshape(all_ret[k], k_sh)
 
-    k_extract = ["rgb_map", "disp_map", "acc_map"]
+    k_extract = ["rgb", "disp", "acc"]
     ret_list = [all_ret[k] for k in k_extract]
     ret_dict = {k: all_ret[k] for k in all_ret if k not in k_extract}
     return ret_list + [ret_dict]
@@ -1893,6 +1913,7 @@ def main_function(args):
             start,
             dataset_extras,
             batch_pixel_indices,
+            ray_params
         )
 
         # losses will have shape N_rays
