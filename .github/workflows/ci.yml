@@ -85,34 +85,34 @@ jobs:
 
     # Removed steps related to Kaggle CLI installation and dataset download
 
-    - name: Wait for dataset extraction
-      run: |
-        for i in {1..60}; do
-          if [ -d "preprocessed_data/nerf_llff_data/trex/images" ]; then
-            echo "Dataset extraction complete."
-            break
-          else
-            echo "Waiting for dataset extraction... (Attempt $i)"
-            echo "Current contents of preprocessed_data directory:"
-            ls -l preprocessed_data
-            echo "Current contents of nerf_llff_data directory:"
-            ls -l preprocessed_data/nerf_llff_data
-            sleep 10
-          fi
-        done
-        if [ ! -d "preprocessed_data/nerf_llff_data/trex/images" ]; then
-          echo "Dataset extraction failed."
-          exit 1
-        fi
+    # - name: Wait for dataset extraction
+    #   run: |
+    #     for i in {1..60}; do
+    #       if [ -d "preprocessed_data/nerf_llff_data/trex/images" ]; then
+    #         echo "Dataset extraction complete."
+    #         break
+    #       else
+    #         echo "Waiting for dataset extraction... (Attempt $i)"
+    #         echo "Current contents of preprocessed_data directory:"
+    #         ls -l preprocessed_data
+    #         echo "Current contents of nerf_llff_data directory:"
+    #         ls -l preprocessed_data/nerf_llff_data
+    #         sleep 10
+    #       fi
+    #     done
+    #     if [ ! -d "preprocessed_data/nerf_llff_data/trex/images" ]; then
+    #       echo "Dataset extraction failed."
+    #       exit 1
+    #     fi
 
-    - name: Verify dataset download
-      run: |
-        if [ -d "preprocessed_data/nerf_llff_data" ] || [ -d "preprocessed_data/nerf_real_360" ] || [ -d "preprocessed_data/nerf_synthetic" ]; then
-          echo "Dataset directories exist and are not empty."
-        else
-          echo "Dataset directories do not exist or are empty."
-          exit 1
-        fi
+    # - name: Verify dataset download
+    #   run: |
+    #     if [ -d "preprocessed_data/nerf_llff_data" ] || [ -d "preprocessed_data/nerf_real_360" ] || [ -d "preprocessed_data/nerf_synthetic" ]; then
+    #       echo "Dataset directories exist and are not empty."
+    #     else
+    #       echo "Dataset directories do not exist or are empty."
+    #       exit 1
+    #     fi
 
     - name: List contents of preprocessed_data directory
       run: |
