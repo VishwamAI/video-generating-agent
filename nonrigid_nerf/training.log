@@ -111,3 +111,112 @@
 2024-07-05 21:09:19,352 - ERROR - Error encoding text and genre on attempt 2/3: only integer tensors of a single element can be converted to an index
 2024-07-05 21:09:21,363 - ERROR - Error encoding text and genre on attempt 3/3: only integer tensors of a single element can be converted to an index
 2024-07-05 21:09:21,364 - ERROR - Max retries reached. Using fallback zero tensor for text_genre_latents.
+2024-07-05 21:14:50,184 - INFO - Found ckpts: []
+2024-07-05 21:14:50,206 - ERROR - Error encoding text and genre on attempt 1/3: only integer tensors of a single element can be converted to an index
+2024-07-05 21:14:51,211 - ERROR - Error encoding text and genre on attempt 2/3: only integer tensors of a single element can be converted to an index
+2024-07-05 21:14:53,220 - ERROR - Error encoding text and genre on attempt 3/3: only integer tensors of a single element can be converted to an index
+2024-07-05 21:14:53,221 - ERROR - Max retries reached. Using fallback zero tensor for text_genre_latents.
+2024-07-05 21:18:39,736 - INFO - Found ckpts: []
+2024-07-05 21:18:39,759 - ERROR - Error encoding text and genre on attempt 1/3: only integer tensors of a single element can be converted to an index
+2024-07-05 21:18:40,764 - ERROR - Error encoding text and genre on attempt 2/3: only integer tensors of a single element can be converted to an index
+2024-07-05 21:18:42,775 - ERROR - Error encoding text and genre on attempt 3/3: only integer tensors of a single element can be converted to an index
+2024-07-05 21:18:42,776 - ERROR - Max retries reached. Using fallback zero tensor for text_genre_latents.
+2024-07-05 21:23:05,286 - INFO - Found ckpts: []
+2024-07-05 21:23:05,309 - ERROR - Error encoding text and genre on attempt 1/3: only integer tensors of a single element can be converted to an index
+2024-07-05 21:23:06,314 - ERROR - Error encoding text and genre on attempt 2/3: only integer tensors of a single element can be converted to an index
+2024-07-05 21:23:08,324 - ERROR - Error encoding text and genre on attempt 3/3: only integer tensors of a single element can be converted to an index
+2024-07-05 21:23:08,325 - ERROR - Max retries reached. Using fallback zero tensor for text_genre_latents.
+2024-07-05 21:29:33,810 - INFO - Found ckpts: []
+2024-07-05 21:29:33,828 - ERROR - Error encoding text and genre on attempt 1/3: only integer tensors of a single element can be converted to an index
+2024-07-05 21:29:34,833 - ERROR - Error encoding text and genre on attempt 2/3: only integer tensors of a single element can be converted to an index
+2024-07-05 21:29:36,840 - ERROR - Error encoding text and genre on attempt 3/3: only integer tensors of a single element can be converted to an index
+2024-07-05 21:29:36,841 - ERROR - Max retries reached. Using fallback zero tensor for text_genre_latents.
+2024-07-05 21:35:58,487 - INFO - Found ckpts: []
+2024-07-05 21:42:38,533 - INFO - Found ckpts: []
+2024-07-05 22:11:32,726 - INFO - Found ckpts: []
+2024-07-05 22:15:13,089 - INFO - Found ckpts: []
+2024-07-05 22:18:20,619 - INFO - Found ckpts: []
+2024-07-05 22:25:26,303 - INFO - Found ckpts: []
+2024-07-05 22:28:49,424 - INFO - Found ckpts: []
+2024-07-05 22:32:21,787 - INFO - Found ckpts: []
+2024-07-05 22:35:59,183 - INFO - Found ckpts: []
+2024-07-05 22:38:36,270 - INFO - Found ckpts: []
+2024-07-05 22:42:32,260 - INFO - Found ckpts: []
+2024-07-05 22:46:20,953 - INFO - Found ckpts: []
+2024-07-05 22:50:39,629 - INFO - Found ckpts: []
+2024-07-05 22:51:20,679 - INFO - Found ckpts: []
+2024-07-05 22:56:38,251 - INFO - Found ckpts: []
+2024-07-05 23:06:51,804 - INFO - Found ckpts: []
+2024-07-05 23:09:46,991 - INFO - Found ckpts: []
+2024-07-05 23:13:08,149 - INFO - Found ckpts: []
+2024-07-05 23:17:10,379 - INFO - Found ckpts: []
+2024-07-05 23:21:55,324 - INFO - Found ckpts: []
+2024-07-05 23:26:10,724 - INFO - Found ckpts: []
+2024-07-05 23:30:32,322 - INFO - Found ckpts: []
+2024-07-05 23:33:55,703 - INFO - Found ckpts: []
+2024-07-05 23:36:58,889 - INFO - Found ckpts: []
+2024-07-05 23:40:52,525 - INFO - Found ckpts: []
+2024-07-05 23:43:20,002 - INFO - Found ckpts: []
+2024-07-05 23:46:36,571 - INFO - Found ckpts: []
+2024-07-05 23:50:21,332 - INFO - Found ckpts: []
+2024-07-05 23:53:01,970 - INFO - Found ckpts: []
+2024-07-05 23:55:53,417 - INFO - Found ckpts: []
+2024-07-05 23:58:23,795 - INFO - Found ckpts: []
+2024-07-06 00:01:25,059 - INFO - Found ckpts: []
+2024-07-06 00:02:24,710 - WARNING - File not found: /home/ubuntu/video-generating-agent/nonrigid_nerf/load_llff.py. Skipping copy operation.
+2024-07-06 00:02:24,710 - WARNING - File not found: /home/ubuntu/video-generating-agent/nonrigid_nerf/run_nerf_helpers.py. Skipping copy operation.
+2024-07-06 00:02:24,710 - WARNING - File not found: /home/ubuntu/video-generating-agent/nonrigid_nerf/__init__.py. Skipping copy operation.
+2024-07-06 00:02:24,711 - WARNING - File not found: /home/ubuntu/video-generating-agent/nonrigid_nerf/train.py. Skipping copy operation.
+2024-07-06 00:02:24,711 - WARNING - File not found: /home/ubuntu/video-generating-agent/nonrigid_nerf/llff_preprocessing/colmap_read_model.py. Skipping copy operation.
+2024-07-06 00:02:24,711 - WARNING - File not found: /home/ubuntu/video-generating-agent/nonrigid_nerf/llff_preprocessing/pose_utils.py. Skipping copy operation.
+2024-07-06 00:02:24,712 - WARNING - File not found: /home/ubuntu/video-generating-agent/nonrigid_nerf/llff_preprocessing/colmap_wrapper.py. Skipping copy operation.
+2024-07-06 00:02:27,542 - INFO - Found ckpts: []
+2024-07-06 00:05:24,144 - INFO - Found ckpts: []
+2024-07-06 00:06:22,134 - WARNING - File not found: /home/ubuntu/video-generating-agent/nonrigid_nerf/load_llff.py. Skipping copy operation.
+2024-07-06 00:06:22,134 - WARNING - File not found: /home/ubuntu/video-generating-agent/nonrigid_nerf/run_nerf_helpers.py. Skipping copy operation.
+2024-07-06 00:06:22,134 - WARNING - File not found: /home/ubuntu/video-generating-agent/nonrigid_nerf/__init__.py. Skipping copy operation.
+2024-07-06 00:06:22,135 - WARNING - File not found: /home/ubuntu/video-generating-agent/nonrigid_nerf/train.py. Skipping copy operation.
+2024-07-06 00:06:22,135 - WARNING - File not found: /home/ubuntu/video-generating-agent/nonrigid_nerf/llff_preprocessing/colmap_read_model.py. Skipping copy operation.
+2024-07-06 00:06:22,135 - WARNING - File not found: /home/ubuntu/video-generating-agent/nonrigid_nerf/llff_preprocessing/pose_utils.py. Skipping copy operation.
+2024-07-06 00:06:22,135 - WARNING - File not found: /home/ubuntu/video-generating-agent/nonrigid_nerf/llff_preprocessing/colmap_wrapper.py. Skipping copy operation.
+2024-07-06 00:06:24,690 - INFO - Found ckpts: []
+2024-07-06 00:06:24,704 - ERROR - Error encoding text and genre on attempt 1/3: 'text_descriptions'
+2024-07-06 00:06:25,708 - ERROR - Error encoding text and genre on attempt 2/3: 'text_descriptions'
+2024-07-06 00:06:27,716 - ERROR - Error encoding text and genre on attempt 3/3: 'text_descriptions'
+2024-07-06 00:06:27,717 - ERROR - Max retries reached. Using fallback zero tensor for text_genre_latents.
+2024-07-06 00:06:27,717 - ERROR - Error encoding text and genre on attempt 1/3: 'text_descriptions'
+2024-07-06 00:06:31,737 - ERROR - Error encoding text and genre on attempt 2/3: 'text_descriptions'
+2024-07-06 00:06:39,772 - ERROR - Error encoding text and genre on attempt 3/3: 'text_descriptions'
+2024-07-06 00:06:39,773 - ERROR - Max retries reached. Using fallback zero tensor for text_genre_latents.
+2024-07-06 00:06:39,774 - ERROR - Error encoding text and genre on attempt 1/3: 'text_descriptions'
+2024-07-06 00:06:55,852 - ERROR - Error encoding text and genre on attempt 2/3: 'text_descriptions'
+2024-07-06 00:07:27,953 - ERROR - Error encoding text and genre on attempt 3/3: 'text_descriptions'
+2024-07-06 00:07:27,953 - ERROR - Max retries reached. Using fallback zero tensor for text_genre_latents.
+2024-07-06 00:07:27,953 - ERROR - Error encoding text and genre on attempt 1/3: 'text_descriptions'
+2024-07-06 00:08:32,051 - ERROR - Error encoding text and genre on attempt 2/3: 'text_descriptions'
+2024-07-06 00:13:36,529 - INFO - Found ckpts: []
+2024-07-06 00:14:36,179 - WARNING - File not found: /home/ubuntu/video-generating-agent/nonrigid_nerf/load_llff.py. Skipping copy operation.
+2024-07-06 00:14:36,180 - WARNING - File not found: /home/ubuntu/video-generating-agent/nonrigid_nerf/run_nerf_helpers.py. Skipping copy operation.
+2024-07-06 00:14:36,180 - WARNING - File not found: /home/ubuntu/video-generating-agent/nonrigid_nerf/__init__.py. Skipping copy operation.
+2024-07-06 00:14:36,180 - WARNING - File not found: /home/ubuntu/video-generating-agent/nonrigid_nerf/train.py. Skipping copy operation.
+2024-07-06 00:14:36,181 - WARNING - File not found: /home/ubuntu/video-generating-agent/nonrigid_nerf/llff_preprocessing/colmap_read_model.py. Skipping copy operation.
+2024-07-06 00:14:36,181 - WARNING - File not found: /home/ubuntu/video-generating-agent/nonrigid_nerf/llff_preprocessing/pose_utils.py. Skipping copy operation.
+2024-07-06 00:14:36,181 - WARNING - File not found: /home/ubuntu/video-generating-agent/nonrigid_nerf/llff_preprocessing/colmap_wrapper.py. Skipping copy operation.
+2024-07-06 00:14:38,744 - INFO - Found ckpts: []
+2024-07-06 00:14:38,753 - ERROR - 'text_descriptions' or 'genres' key is missing in dataset_extras
+2024-07-06 00:24:54,729 - INFO - Found ckpts: []
+2024-07-06 00:25:54,216 - WARNING - File not found: /home/ubuntu/video-generating-agent/nonrigid_nerf/load_llff.py. Skipping copy operation.
+2024-07-06 00:25:54,216 - WARNING - File not found: /home/ubuntu/video-generating-agent/nonrigid_nerf/run_nerf_helpers.py. Skipping copy operation.
+2024-07-06 00:25:54,216 - WARNING - File not found: /home/ubuntu/video-generating-agent/nonrigid_nerf/__init__.py. Skipping copy operation.
+2024-07-06 00:25:54,217 - WARNING - File not found: /home/ubuntu/video-generating-agent/nonrigid_nerf/train.py. Skipping copy operation.
+2024-07-06 00:25:54,217 - WARNING - File not found: /home/ubuntu/video-generating-agent/nonrigid_nerf/llff_preprocessing/colmap_read_model.py. Skipping copy operation.
+2024-07-06 00:25:54,217 - WARNING - File not found: /home/ubuntu/video-generating-agent/nonrigid_nerf/llff_preprocessing/pose_utils.py. Skipping copy operation.
+2024-07-06 00:25:54,217 - WARNING - File not found: /home/ubuntu/video-generating-agent/nonrigid_nerf/llff_preprocessing/colmap_wrapper.py. Skipping copy operation.
+2024-07-06 00:36:32,498 - INFO - Found ckpts: []
+2024-07-06 00:37:31,604 - WARNING - File not found: /home/ubuntu/video-generating-agent/nonrigid_nerf/load_llff.py. Skipping copy operation.
+2024-07-06 00:37:31,605 - WARNING - File not found: /home/ubuntu/video-generating-agent/nonrigid_nerf/run_nerf_helpers.py. Skipping copy operation.
+2024-07-06 00:37:31,605 - WARNING - File not found: /home/ubuntu/video-generating-agent/nonrigid_nerf/__init__.py. Skipping copy operation.
+2024-07-06 00:37:31,606 - WARNING - File not found: /home/ubuntu/video-generating-agent/nonrigid_nerf/train.py. Skipping copy operation.
+2024-07-06 00:37:31,606 - WARNING - File not found: /home/ubuntu/video-generating-agent/nonrigid_nerf/llff_preprocessing/colmap_read_model.py. Skipping copy operation.
+2024-07-06 00:37:31,606 - WARNING - File not found: /home/ubuntu/video-generating-agent/nonrigid_nerf/llff_preprocessing/pose_utils.py. Skipping copy operation.
+2024-07-06 00:37:31,606 - WARNING - File not found: /home/ubuntu/video-generating-agent/nonrigid_nerf/llff_preprocessing/colmap_wrapper.py. Skipping copy operation.
