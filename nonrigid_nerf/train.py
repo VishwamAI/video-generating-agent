@@ -35,6 +35,13 @@ from nonrigid_nerf.load_llff import load_llff_data
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 DEBUG = True  # gets overwritten by args.debug
 
+def determine_nerf_volume_extent(parallel_render, poses, intrinsics, render_kwargs_train, args):
+    # Placeholder function for determine_nerf_volume_extent
+    # Returns dummy values for min_point and max_point
+    min_point = torch.tensor([0.0, 0.0, 0.0])
+    max_point = torch.tensor([1.0, 1.0, 1.0])
+    return min_point, max_point
+
 def get_embedder(multires, i=0):
     if i == -1:
         return nn.Identity(), 3
