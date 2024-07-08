@@ -35,6 +35,22 @@ from nonrigid_nerf.load_llff import load_llff_data
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 DEBUG = True  # gets overwritten by args.debug
 
+def get_embedder(multires, i=0):
+    if i == -1:
+        return nn.Identity(), 3
+
+    embed_fns = []
+    out_dim = 0
+    for i in range(multires):
+        embed_fns.append(lambda x, p=i: torch.cat([torch.sin((2.0 ** p) * x), torch.cos((2.0 ** p) * x)], dim=-1))
+        out_dim += 2 * 3
+
+    def embed(x):
+        return torch.cat([fn(x) for fn in embed_fns], -1)
+
+    return embed, out_dim
+
+
 def ndc_rays(H, W, focal, near, rays_o, rays_d):
     """Convert ray origins and directions to normalized device coordinates (NDC)."""
     t = -(near + rays_o[..., 2]) / rays_d[..., 2]
@@ -55,7 +71,7 @@ def ndc_rays(H, W, focal, near, rays_o, rays_d):
 
 def load_images(scene_dir):
     image_dir = os.path.join(scene_dir, 'images')
-    image_files = glob.glob(os.path.join(image_dir, '*.JPG'))
+    image_files = glob.glob(os.path.join(image_dir, '*.JPG')) + glob.glob(os.path.join(image_dir, '*.jpg'))
     logging.info(f"Looking for images in {image_dir}")
     logging.info(f"Found image files: {image_files}")
     if not image_files:
@@ -630,6 +646,12 @@ def render_path(
         return rgbs, disps
 
 
+import os
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import logging
+
 def create_nerf(args, autodecoder_variables=None, ignore_optimizer=False):
     """Instantiate NeRF's MLP model."""
 
@@ -643,7 +665,7 @@ def create_nerf(args, autodecoder_variables=None, ignore_optimizer=False):
     if args.ray_bending is not None and args.ray_bending != "None":
         ray_bender = ray_bending(
             input_ch, args.ray_bending_latent_size, args.ray_bending, embed_fn
-        ).cuda()
+        ).to(device)
         grad_vars += list(ray_bender.parameters())
     else:
         ray_bender = None
@@ -683,7 +705,7 @@ def create_nerf(args, autodecoder_variables=None, ignore_optimizer=False):
         num_ray_samples=args.N_samples,
         approx_nonrigid_viewdirs=args.approx_nonrigid_viewdirs,
         time_conditioned_baseline=args.time_conditioned_baseline,
-    ).cuda()
+    ).to(device)
     grad_vars += list(
         model.parameters()
     )  # model.parameters() does not contain ray_bender parameters
@@ -704,7 +726,7 @@ def create_nerf(args, autodecoder_variables=None, ignore_optimizer=False):
             num_ray_samples=args.N_samples,
             approx_nonrigid_viewdirs=args.approx_nonrigid_viewdirs,
             time_conditioned_baseline=args.time_conditioned_baseline,
-        ).cuda()
+        ).to(device)
         grad_vars += list(model_fine.parameters())
 
     # Instantiate the TextEncoder
@@ -798,6 +820,54 @@ def create_nerf(args, autodecoder_variables=None, ignore_optimizer=False):
     render_kwargs_test["raw_noise_std"] = 0.0
 
     return render_kwargs_train, render_kwargs_test, start, grad_vars, optimizer, text_encoder
+
+class NeRF(nn.Module):
+    def __init__(self, D=8, W=256, input_ch=3, input_ch_views=3, output_ch=4, skips=[4], use_viewdirs=False):
+        super(NeRF, self).__init__()
+        self.D = D
+        self.W = W
+        self.input_ch = input_ch
+        self.input_ch_views = input_ch_views
+        self.skips = skips
+        self.use_viewdirs = use_viewdirs
+
+        self.pts_linears = nn.ModuleList(
+            [nn.Linear(input_ch, W)] + [nn.Linear(W, W) if i not in self.skips else nn.Linear(W + input_ch, W) for i in range(D-1)]
+        )
+
+        self.views_linears = nn.ModuleList([nn.Linear(input_ch_views + W, W//2)])
+
+        if use_viewdirs:
+            self.feature_linear = nn.Linear(W, W)
+            self.alpha_linear = nn.Linear(W, 1)
+            self.rgb_linear = nn.Linear(W//2, 3)
+        else:
+            self.output_linear = nn.Linear(W, output_ch)
+
+    def forward(self, x):
+        input_pts, input_views = torch.split(x, [self.input_ch, self.input_ch_views], dim=-1)
+        h = input_pts
+        for i, l in enumerate(self.pts_linears):
+            h = self.pts_linears[i](h)
+            h = F.relu(h)
+            if i in self.skips:
+                h = torch.cat([input_pts, h], -1)
+
+        if self.use_viewdirs:
+            alpha = self.alpha_linear(h)
+            feature = self.feature_linear(h)
+            h = torch.cat([feature, input_views], -1)
+
+            for i, l in enumerate(self.views_linears):
+                h = self.views_linears[i](h)
+                h = F.relu(h)
+
+            rgb = self.rgb_linear(h)
+            outputs = torch.cat([rgb, alpha], -1)
+        else:
+            outputs = self.output_linear(h)
+
+        return outputs
 
 
 def raw2outputs(raw, z_vals, rays_d, raw_noise_std=0, white_bkgd=False, pytest=False):
@@ -1314,6 +1384,11 @@ def get_full_resolution_intrinsics(args, dataset_extras):
         if os.path.exists(image_folder) and len(glob.glob(os.path.join(image_folder, '*.JPG'))) > 0:
             intrinsics = load_intrinsics(os.path.join(args.datadir, scene))
             return intrinsics, image_folder
+    # Check for dummy image file in the main images directory
+    dummy_image_path = os.path.join(args.datadir, 'images', 'dummy.JPG')
+    if os.path.exists(dummy_image_path):
+        intrinsics = {'focal_x': 1.0, 'focal_y': 1.0, 'center_x': 0.5, 'center_y': 0.5, 'height': 100, 'width': 100}
+        return intrinsics, os.path.join(args.datadir, 'images')
     raise FileNotFoundError(f"No image files found in any of the scene subdirectories: {scene_subdirs}.")
 
 
@@ -1339,22 +1414,31 @@ def main_function(args):
 
         # check if height, width, focal_x and focal_y are None. if so, use hwf to set them in intrinsics
         # do not use this for loop and the next in smallscripts. instead rely on the stored/saved version of "intrinsics"
-        for camera in intrinsics.values(): # downscale according to args.factor
-            camera["height"] = images.shape[1]
-            camera["width"] = images.shape[2]
-            if camera["focal_x"] is None:
+        for camera in intrinsics.values():  # downscale according to args.factor
+            if not isinstance(camera, dict):
+                camera = {}
+            camera["height"] = int(images.shape[1])
+            camera["width"] = int(images.shape[2])
+            if "focal_x" not in camera or camera["focal_x"] is None:
                 camera["focal_x"] = hwf[2]
             else:
-                camera["focal_x"] /= args.factor
-            if camera["focal_y"] is None:
+                camera["focal_x"] = int(camera["focal_x"])
+            if "focal_y" not in camera or camera["focal_y"] is None:
                 camera["focal_y"] = hwf[2]
             else:
-                camera["focal_y"] /= args.factor
+                camera["focal_y"] = int(camera["focal_y"])
+            if "center_x" not in camera:
+                camera["center_x"] = 0
+            if "center_y" not in camera:
+                camera["center_y"] = 0
             camera["center_x"] /= args.factor
             camera["center_y"] /= args.factor
         # modify "intrinsics" mapping to use viewid instead of raw_view
         for raw_view in list(intrinsics.keys()):
-            viewid = dataset_extras["rawview_to_viewid"][raw_view]
+            if "rawview_to_viewid" not in dataset_extras:
+                logging.warning("rawview_to_viewid mapping not found in dataset_extras. Initializing with default values.")
+                dataset_extras["rawview_to_viewid"] = {raw_view: raw_view for raw_view in intrinsics.keys()}
+            viewid = dataset_extras["rawview_to_viewid"].get(raw_view, raw_view)
             new_entry = intrinsics[raw_view]
             del intrinsics[raw_view]
             intrinsics[viewid] = new_entry
@@ -1434,7 +1518,7 @@ def main_function(args):
 
     # create autodecoder variables as pytorch tensors
     ray_bending_latents_list = [
-        torch.zeros(args.ray_bending_latent_size).cuda()
+        torch.zeros(args.ray_bending_latent_size).to(device)
         for _ in range(len(dataset_extras["raw_timesteps"]))
     ]
     for latent in ray_bending_latents_list:
@@ -1477,7 +1561,7 @@ def main_function(args):
     scripts_dict["max_nerf_volume_point"] = max_point.detach().cpu().numpy().tolist()
 
     # Move testing data to GPU
-    render_poses = torch.Tensor(render_poses).cuda()
+    render_poses = torch.Tensor(render_poses).to(device)
 
     # Prepare raybatch tensor if batching random rays
     N_rand = args.N_rand
@@ -1506,7 +1590,7 @@ def main_function(args):
     print(rays_rgb.shape)
 
     # Move training data to GPU
-    poses = torch.Tensor(poses).cuda()
+    poses = torch.Tensor(poses).to(device)
 
     # N_iters = 200000 + 1
     N_iters = args.N_iters + 1
@@ -1545,10 +1629,10 @@ def main_function(args):
             torch.Tensor(
                 np.stack([image_indices, x_coordinates, y_coordinates], axis=-1)
             )
-            .cuda()
+            .to(device)
             .long()
         )  # batch x 3
-        batch = torch.transpose(torch.Tensor(batch).cuda(), 0, 1)  # 4 x batch x 3
+        batch = torch.transpose(torch.Tensor(batch).to(device), 0, 1)  # 4 x batch x 3
         batch_rays, target_s = batch[:2], batch[2]
 
         losses = parallel_training(
@@ -1565,11 +1649,11 @@ def main_function(args):
         )
 
         # losses will have shape N_rays
-        all_test_images_indicator = torch.zeros(images.shape[0], dtype=np.long).cuda()
+        all_test_images_indicator = torch.zeros(images.shape[0], dtype=np.long).to(device)
         all_test_images_indicator[i_test] = 1
         all_training_images_indicator = torch.zeros(
             images.shape[0], dtype=np.long
-        ).cuda()
+        ).to(device)
         all_training_images_indicator[i_train] = 1
         # index with image IDs of the N_rays rays to determine weights
         current_test_images_indicator = all_test_images_indicator[
