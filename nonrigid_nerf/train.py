@@ -1649,6 +1649,16 @@ def main_function(args):
 
     rays_rgb = np.transpose(rays_rgb, [0, 2, 3, 1, 4])  # [N, H, W, ro+rd+rgb+ind, 3]
 
+    # Concatenate rays_rgb
+    try:
+        rays_rgb = np.concatenate(
+            [rays_rgb, np.zeros((rays_rgb.shape[0], rays_rgb.shape[1], rays_rgb.shape[2], rays_rgb.shape[3], 1))],
+            axis=-1,
+        )
+    except ValueError as e:
+        logging.error(f"Error concatenating rays_rgb: {e}")
+        raise
+
     # use all images
     # keep shape N x H x W x ro+rd+rgb x 3
     rays_rgb = rays_rgb.astype(np.float32)
