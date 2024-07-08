@@ -25,7 +25,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from nonrigid_nerf.run_nerf_helpers import *
+from run_nerf_helpers import *
 from scripts.text_encoder import TextEncoder
 #from load_llff import load_llff_data_multi_view
 from nonrigid_nerf.load_llff import load_llff_data
@@ -55,6 +55,8 @@ def ndc_rays(H, W, focal, near, rays_o, rays_d):
 def load_images(scene_dir):
     image_dir = os.path.join(scene_dir, 'images')
     image_files = glob.glob(os.path.join(image_dir, '*.JPG'))
+    logging.info(f"Looking for images in {image_dir}")
+    logging.info(f"Found image files: {image_files}")
     if not image_files:
         # Create dummy image file if none found
         dummy_image_path = os.path.join(image_dir, 'dummy_image.JPG')
@@ -63,6 +65,7 @@ def load_images(scene_dir):
             dummy_image = Image.new('RGB', (100, 100), color = 'white')
             dummy_image.save(dummy_image_path)
         image_files = [dummy_image_path]
+        logging.info(f"Created dummy image file: {dummy_image_path}")
     return image_files
 
 def batchify(fn, chunk, detailed_output=False):
