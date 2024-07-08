@@ -1687,25 +1687,15 @@ def main_function(args):
     if rays.shape[3] % additional_indices.shape[-1] != 0 and additional_indices.shape[-1] != 1:
         raise ValueError(f"Shape mismatch: rays.shape[3] ({rays.shape[3]}) is not divisible by additional_indices.shape[-1] ({additional_indices.shape[-1]})")
 
-    # Reshape additional_indices to match rays dimensions, allowing for broadcasting
-    additional_indices_reshaped = additional_indices[:, None, :, :, :].expand(
-        rays.shape[0], rays.shape[1], rays.shape[2], rays.shape[3], -1
-    )
+    # Adjust expansion operation
+    additional_indices_reshaped = additional_indices[:, None, :, :, :].expand(rays.shape[0], rays.shape[1], rays.shape[2], rays.shape[3], -1)
 
     # Print shapes for debugging
     print(f"Shape of rays: {rays.shape}")
-    print(f"Shape of images_tensor: {images_tensor.shape}")
     print(f"Shape of additional_indices_reshaped: {additional_indices_reshaped.shape}")
 
     # Concatenate tensors
-    rays = torch.cat(
-        [
-            rays,
-            images_tensor.expand(rays.shape[0], -1, rays.shape[2], rays.shape[3], rays.shape[4]),
-            additional_indices_reshaped
-        ],
-        1
-    )
+    rays = torch.cat([rays, additional_indices_reshaped], -1)
 
     rays_rgb = np.transpose(rays_rgb, [0, 2, 3, 1, 4])  # [N, H, W, ro+rd+rgb+ind, 3]
 
