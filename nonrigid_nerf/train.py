@@ -1653,8 +1653,13 @@ def main_function(args):
     rays = torch.tensor(rays).to(device)
     additional_indices = torch.tensor(additional_indices).to(device)
     rays_rgb = torch.cat(
-        [rays, images_reshaped, additional_indices[:, None]], 1
-    )  # [N, ro+rd+rgb+ind, H, W, 3]
+        [
+            rays,
+            images[:, None].expand(rays.shape[0], -1, rays.shape[2], rays.shape[3], rays.shape[4]),
+            additional_indices[:, None].expand(rays.shape[0], -1, rays.shape[2], rays.shape[3], rays.shape[4])
+        ],
+        1
+    )
 
     rays_rgb = np.transpose(rays_rgb, [0, 2, 3, 1, 4])  # [N, H, W, ro+rd+rgb+ind, 3]
 
