@@ -1665,7 +1665,7 @@ def main_function(args):
 
     # Expand additional_indices to match rays dimensions
     expanded_additional_indices = additional_indices[:, None].expand(
-        rays.shape[0], rays.shape[1], rays.shape[2], rays.shape[3], additional_indices.shape[-1] * (rays.shape[3] // additional_indices.shape[3])
+        rays.shape[0], rays.shape[1], rays.shape[2], rays.shape[3], additional_indices.shape[-1]
     )
 
     # Print shapes for debugging
