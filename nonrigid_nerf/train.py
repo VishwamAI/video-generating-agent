@@ -1605,7 +1605,12 @@ def main_function(args):
     N_rand = args.N_rand
     # For random ray batching
     print("get rays")
-    rays = np.stack([get_rays_np(p, intrinsics[dataset_extras["imageid_to_viewid"].get(imageid, list(intrinsics.keys())[0])]) for imageid, p in enumerate(poses[:,:3,:4])], 0) # [N, ro+rd, H, W, 3]
+    if not intrinsics:
+        logging.error("Intrinsics dictionary is empty. Using default values.")
+        default_intrinsics = {'H': 100, 'W': 100, 'focal': 1.0}
+        rays = np.stack([get_rays_np(p, default_intrinsics) for imageid, p in enumerate(poses[:,:3,:4])], 0) # [N, ro+rd, H, W, 3]
+    else:
+        rays = np.stack([get_rays_np(p, intrinsics[dataset_extras["imageid_to_viewid"].get(imageid, next(iter(intrinsics)))]) for imageid, p in enumerate(poses[:,:3,:4])], 0) # [N, ro+rd, H, W, 3]
     print("done, concats")
 
     # attach index information (index among all images in dataset, x and y coordinate)
