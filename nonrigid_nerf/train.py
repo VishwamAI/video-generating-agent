@@ -1651,7 +1651,7 @@ def main_function(args):
     # Ensure all arrays have the same number of dimensions before concatenation
     images_reshaped = torch.ones((rays.shape[0], 1, rays.shape[2], rays.shape[3], 1), device=device)
     rays = torch.tensor(rays).to(device)
-    additional_indices = additional_indices.to(device)
+    additional_indices = torch.tensor(additional_indices).to(device)
     rays_rgb = torch.cat(
         [rays, images_reshaped, additional_indices[:, None]], 1
     )  # [N, ro+rd+rgb+ind, H, W, 3]
