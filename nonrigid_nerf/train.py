@@ -1643,6 +1643,12 @@ def main_function(args):
         [image_indices, x_coordinates, y_coordinates], axis=-1
     )  # N x height x width x 3 (image, x, y)
 
+    # Debug logging to print shapes of arrays before concatenation
+    print(f"Shape of rays: {rays.shape}")
+    print(f"Shape of images[:, None]: {images[:, None].shape}")
+    print(f"Shape of additional_indices[:, None]: {additional_indices[:, None].shape}")
+
+    # Ensure all arrays have the same number of dimensions before concatenation
     rays_rgb = np.concatenate(
         [rays, images[:, None], additional_indices[:, None]], 1
     )  # [N, ro+rd+rgb+ind, H, W, 3]
