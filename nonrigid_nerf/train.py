@@ -130,6 +130,18 @@ def batchify(fn, chunk, detailed_output=False):
 
     return ret
 
+def get_rays_np(pose, intrinsics):
+    """
+    Placeholder function for get_rays_np.
+    Generates rays from camera poses and intrinsics.
+    """
+    H, W, focal = intrinsics['H'], intrinsics['W'], intrinsics['focal']
+    i, j = np.meshgrid(np.arange(W, dtype=np.float32), np.arange(H, dtype=np.float32), indexing='xy')
+    dirs = np.stack([(i - W * 0.5) / focal, -(j - H * 0.5) / focal, -np.ones_like(i)], -1)
+    rays_d = np.sum(dirs[..., np.newaxis, :] * pose[:3, :3], -1)
+    rays_o = np.broadcast_to(pose[:3, -1], np.shape(rays_d))
+    return rays_o, rays_d
+
 
 def run_network(
     inputs,
