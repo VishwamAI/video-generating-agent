@@ -1658,11 +1658,27 @@ def main_function(args):
     rays = torch.tensor(rays).to(device)
     additional_indices = torch.tensor(additional_indices).to(device)
     images_tensor = torch.tensor(images[:, None]).to(device)
-    rays_rgb = torch.cat(
+
+    # Validate shapes before expansion
+    if rays.shape[3] % additional_indices.shape[3] != 0:
+        raise ValueError(f"Shape mismatch: rays.shape[3] ({rays.shape[3]}) is not divisible by additional_indices.shape[3] ({additional_indices.shape[3]})")
+
+    # Expand additional_indices to match rays dimensions
+    expanded_additional_indices = additional_indices[:, None].expand(
+        rays.shape[0], rays.shape[1], rays.shape[2], rays.shape[3], additional_indices.shape[-1] * (rays.shape[3] // additional_indices.shape[3])
+    )
+
+    # Print shapes for debugging
+    print(f"Shape of rays: {rays.shape}")
+    print(f"Shape of images_tensor: {images_tensor.shape}")
+    print(f"Shape of expanded_additional_indices: {expanded_additional_indices.shape}")
+
+    # Concatenate tensors
+    rays = torch.cat(
         [
             rays,
             images_tensor.expand(rays.shape[0], -1, rays.shape[2], rays.shape[3], rays.shape[4]),
-            additional_indices[:, None].expand(rays.shape[0], rays.shape[1], rays.shape[2], rays.shape[3], additional_indices.shape[-1])
+            expanded_additional_indices
         ],
         1
     )
