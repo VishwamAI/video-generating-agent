@@ -1649,8 +1649,10 @@ def main_function(args):
     print(f"Shape of additional_indices[:, None]: {additional_indices[:, None].shape}")
 
     # Ensure all arrays have the same number of dimensions before concatenation
-    images_reshaped = images[:, None].reshape(rays.shape[0], 1, rays.shape[2], rays.shape[3], 1)
-    rays_rgb = np.concatenate(
+    images_reshaped = torch.ones((rays.shape[0], 1, rays.shape[2], rays.shape[3], 1), device=device)
+    rays = rays.to(device)
+    additional_indices = additional_indices.to(device)
+    rays_rgb = torch.cat(
         [rays, images_reshaped, additional_indices[:, None]], 1
     )  # [N, ro+rd+rgb+ind, H, W, 3]
 
