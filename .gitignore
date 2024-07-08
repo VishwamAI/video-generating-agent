@@ -2,3 +2,4 @@ venv/
 __pycache__/
 models/
 # preprocessed_data/
+train_model_error_log/
