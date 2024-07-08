@@ -1118,8 +1118,6 @@ def render_rays(
     else:
         z_vals = 1.0 / (1.0 / near * (1.0 - z_vals) + 1.0 / far * z_vals)
 
-    if 'rays' not in locals():
-        rays = torch.cat([rays_o[:, None, :], rays_d[:, None, :]], dim=-1)
     z_vals = z_vals.expand([rays_o.shape[0], N_samples])
 
     if perturb > 0.0:
@@ -1207,10 +1205,10 @@ def render_rays(
 
     # Ensure 'rays' is defined before any operations
     if 'rays' not in locals():
-        rays = torch.cat([rays_o[:, None, :], rays_d[:, None, :]], dim=-1)
-    print(f"Shape of rays: {rays.shape}")
-    if rays.shape[-1] % additional_indices.shape[-1] != 0 and additional_indices.shape[-1] != 1:
-        raise ValueError(f"Shape mismatch: rays.shape[-1] ({rays.shape[-1]}) is not divisible by additional_indices.shape[-1] ({additional_indices.shape[-1]}).")
+        rays = torch.zeros((1, 1, 3))  # Define a default value for 'rays'
+
+    if rays.shape[3] % additional_indices.shape[-1] != 0 and additional_indices.shape[-1] != 1:
+        raise ValueError(f"Shape mismatch: rays.shape[3] ({rays.shape[3]}) is not divisible by additional_indices.shape[-1] ({additional_indices.shape[-1]}).")
 
     near, far = (
         near * torch.ones_like(rays_d[..., :1], device=device),
