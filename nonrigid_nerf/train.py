@@ -1127,6 +1127,30 @@ def render_rays(
     if N_importance > 0:
         pass
 
+# Define rays before its first use
+if not intrinsics:
+    logging.error("Intrinsics dictionary is empty. Using default values.")
+    default_intrinsics = {'H': 100, 'W': 100, 'focal': 1.0}
+    rays = np.stack([get_rays_np(p, default_intrinsics) for imageid, p in enumerate(poses[:,:3,:4])], 0) # [N, ro+rd, H, W, 3]
+else:
+    default_intrinsics = {
+        'H': 800,  # Default height
+        'W': 800,  # Default width
+        'focal': 500.0  # Default focal length
+    }
+    rays = np.stack([get_rays_np(p, intrinsics.get(dataset_extras["imageid_to_viewid"].get(imageid, next(iter(intrinsics))), default_intrinsics)) for imageid, p in enumerate(poses[:,:3,:4])], 0) # [N, ro+rd, H, W, 3]
+
+# Validate shapes before expansion
+if rays.shape[3] % additional_indices.shape[-1] != 0 and additional_indices.shape[-1] != 1:
+    raise ValueError(f"Shape mismatch: rays.shape[3] ({rays.shape[3]}) is not divisible by additional_indices.shape[-1] ({additional_indices.shape[-1]}))")
+
+# Initialize intrinsics, dataset_extras, and poses
+intrinsics = {
+    'H': 800,  # Default height
+    'W': 800,  # Default width
+    'focal': 500.0  # Default focal length
+}
+
 # Initialize intrinsics, dataset_extras, and poses
 intrinsics = {
     'H': 800,  # Default height
@@ -1153,36 +1177,24 @@ else:
     }
     rays = np.stack([get_rays_np(p, intrinsics.get(dataset_extras["imageid_to_viewid"].get(imageid, next(iter(intrinsics))), default_intrinsics)) for imageid, p in enumerate(poses[:,:3,:4])], 0) # [N, ro+rd, H, W, 3]
 
-# Validate shapes before expansion
-if rays.shape[3] % additional_indices.shape[-1] != 0 and additional_indices.shape[-1] != 1:
-    raise ValueError(f"Shape mismatch: rays.shape[3] ({rays.shape[3]}) is not divisible by additional_indices.shape[-1] ({additional_indices.shape[-1]}))")
-
-dataset_extras = {
-    "imageid_to_viewid": {0: 0}  # Dummy mapping for CI/CD pipeline
-}
-
-poses = np.zeros((1, 3, 4))  # Dummy poses data
-
-# Define rays before its first use
-if not intrinsics:
-    logging.error("Intrinsics dictionary is empty. Using default values.")
-    default_intrinsics = {'H': 100, 'W': 100, 'focal': 1.0}
-    rays = np.stack([get_rays_np(p, default_intrinsics) for imageid, p in enumerate(poses[:,:3,:4])], 0) # [N, ro+rd, H, W, 3]
-else:
-    default_intrinsics = {
-        'H': 800,  # Default height
-        'W': 800,  # Default width
-        'focal': 500.0  # Default focal length
-    }
-    rays = np.stack([get_rays_np(p, intrinsics.get(dataset_extras["imageid_to_viewid"].get(imageid, next(iter(intrinsics))), default_intrinsics)) for imageid, p in enumerate(poses[:,:3,:4])], 0) # [N, ro+rd, H, W, 3]
-
-# Validate shapes before expansion
-if rays.shape[3] % additional_indices.shape[-1] != 0 and additional_indices.shape[-1] != 1:
-    raise ValueError(f"Shape mismatch: rays.shape[3] ({rays.shape[3]}) is not divisible by additional_indices.shape[-1] ({additional_indices.shape[-1]}))")
-
 # Reshape additional_indices to match rays dimensions, allowing for broadcasting
 additional_indices_reshaped = additional_indices[:, None, None, None, :].expand(
     rays.shape[0], rays.shape[1], rays.shape[2], rays.shape[3], additional_indices.shape[-1]
+)
+
+# Print shapes for debugging
+print(f"Shape of rays: {rays.shape}")
+print(f"Shape of images_tensor: {images_tensor.shape}")
+print(f"Shape of additional_indices_reshaped: {additional_indices_reshaped.shape}")
+
+# Concatenate tensors
+rays = torch.cat(
+    [
+        rays,
+        images_tensor.expand(rays.shape[0], -1, rays.shape[2], rays.shape[3], rays.shape[4]),
+        additional_indices_reshaped
+    ],
+    1
 )
 
 # Print shapes for debugging
