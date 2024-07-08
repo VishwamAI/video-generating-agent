@@ -1565,11 +1565,13 @@ def main_function(args):
         dataset_extras["imageid_to_viewid"] = {i: v for i, v in enumerate(dataset_extras["imageid_to_viewid"])}
 
     for imageid in range(poses.shape[0]):
-        if imageid in dataset_extras["imageid_to_viewid"]:
-            view_ids.append(intrinsics[dataset_extras["imageid_to_viewid"].get(imageid, 0)])
+        viewid = dataset_extras["imageid_to_viewid"].get(imageid, None)
+        if viewid is not None and viewid in intrinsics:
+            view_ids.append(intrinsics[viewid])
         else:
-            # Provide a default value if the key does not exist
-            view_ids.append(intrinsics[0])  # Assuming 0 is a valid default key
+            # Provide a valid default value if the key does not exist
+            default_key = next(iter(intrinsics))  # Get the first key in the intrinsics dictionary
+            view_ids.append(intrinsics[default_key])
 
     min_point, max_point = determine_nerf_volume_extent(
         parallel_render, poses, view_ids, render_kwargs_train, args
