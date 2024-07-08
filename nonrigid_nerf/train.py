@@ -1407,6 +1407,9 @@ def main_function(args):
         dataset_extras = _get_multi_view_helper_mappings(images.shape[0], args.datadir)
         intrinsics, image_folder = get_full_resolution_intrinsics(args, dataset_extras)
 
+        if poses.size == 0:
+            poses = np.zeros((1, 3, 5))  # Dummy poses data
+
         hwf = poses[0, :3, -1]
         poses = poses[:, :3, :4]
         print("Loaded llff", images.shape, render_poses.shape, hwf, args.datadir)
