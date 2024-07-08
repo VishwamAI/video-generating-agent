@@ -699,7 +699,6 @@ def create_nerf(args, autodecoder_variables=None, ignore_optimizer=False):
         skips=skips,
         input_ch_views=input_ch_views,
         use_viewdirs=args.use_viewdirs,
-        ray_bender=ray_bender,
         ray_bending_latent_size=args.ray_bending_latent_size,
         embeddirs_fn=embeddirs_fn,
         num_ray_samples=args.N_samples,
