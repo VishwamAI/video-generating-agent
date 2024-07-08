@@ -59,14 +59,14 @@ def load_images(scene_dir):
     logging.info(f"Looking for images in {image_dir}")
     logging.info(f"Found image files: {image_files}")
     if not image_files:
-        # Create dummy image file if none found
-        dummy_image_path = os.path.join(image_dir, 'dummy_image.JPG')
+        # Check for dummy image file
+        dummy_image_path = os.path.join(image_dir, 'dummy.JPG')
         if not os.path.exists(dummy_image_path):
             from PIL import Image
             dummy_image = Image.new('RGB', (100, 100), color = 'white')
             dummy_image.save(dummy_image_path)
         image_files = [dummy_image_path]
-        logging.info(f"Created dummy image file: {dummy_image_path}")
+        logging.info(f"Using dummy image file: {dummy_image_path}")
     else:
         logging.info(f"Using existing image files: {image_files}")
     return image_files
@@ -1032,7 +1032,7 @@ def config_parser():
         default="default_expname",  # Default value for expname
         help="experiment name",
     )
-    parser.add_argument("--datadir", type=str, help="input data directory")
+    parser.add_argument("--datadir", type=str, default="preprocessed_data/nerf_llff_data/trex", help="input data directory")
     parser.add_argument(
         "--rootdir",
         type=str,
