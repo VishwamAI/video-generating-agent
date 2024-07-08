@@ -1221,14 +1221,6 @@ def render_rays(
     print(f"Shape of far: {far.shape}")
     print(f"Shape of viewdirs: {viewdirs.shape if use_viewdirs else 'N/A'}")
 
-# Ensure 'rays' is defined before any operations
-if 'rays' not in locals():
-    rays = torch.cat([rays_o[:, None, :], rays_d[:, None, :]], dim=-1)
-    print(f"Shape of rays: {rays.shape}")
-
-if rays.shape[3] % additional_indices.shape[-1] != 0 and additional_indices.shape[-1] != 1:
-    raise ValueError(f"Shape mismatch: rays.shape[3] ({rays.shape[3]}) is not divisible by additional_indices.shape[-1] ({additional_indices.shape[-1]}))")
-
 
 def config_parser():
 
