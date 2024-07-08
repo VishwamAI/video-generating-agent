@@ -1012,11 +1012,17 @@ def config_parser():
         is_config_file=True,
         help="config file path",
     )
-    parser.add_argument("--expname", type=str, help="experiment name")
+    parser.add_argument(
+        "--expname",
+        type=str,
+        default="default_expname",  # Default value for expname
+        help="experiment name",
+    )
     parser.add_argument("--datadir", type=str, help="input data directory")
     parser.add_argument(
         "--rootdir",
         type=str,
+        default="default_rootdir",  # Default value for rootdir
         help="root folder where experiment results will be stored: rootdir/expname/",
     )
 
