@@ -1558,12 +1558,17 @@ def main_function(args):
         coarse_model, latents, text_encoder, fine_model=fine_model, ray_bender=ray_bender
     )
 
-    parallel_render = get_parallelized_render_function(
-        coarse_model=coarse_model, fine_model=fine_model, ray_bender=ray_bender
-    )  # only used by render_path() at test time, not for training/optimization
+    # Ensure the key exists in the dictionary before accessing it
+    view_ids = []
+    for imageid in range(poses.shape[0]):
+        if imageid in dataset_extras["imageid_to_viewid"]:
+            view_ids.append(intrinsics[dataset_extras["imageid_to_viewid"][imageid]])
+        else:
+            # Provide a default value if the key does not exist
+            view_ids.append(intrinsics[0])  # Assuming 0 is a valid default key
 
     min_point, max_point = determine_nerf_volume_extent(
-        parallel_render, poses, [ intrinsics[dataset_extras["imageid_to_viewid"][imageid]] for imageid in range(poses.shape[0]) ], render_kwargs_train, args
+        parallel_render, poses, view_ids, render_kwargs_train, args
     )
     scripts_dict["min_nerf_volume_point"] = min_point.detach().cpu().numpy().tolist()
     scripts_dict["max_nerf_volume_point"] = max_point.detach().cpu().numpy().tolist()
