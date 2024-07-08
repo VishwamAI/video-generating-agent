@@ -42,6 +42,13 @@ def determine_nerf_volume_extent(parallel_render, poses, intrinsics, render_kwar
     max_point = torch.tensor([1.0, 1.0, 1.0])
     return min_point, max_point
 
+def parallel_render(*args, **kwargs):
+    # Placeholder function for parallel_render
+    # Returns dummy values for rendered images and disparities
+    rendered_images = torch.zeros((1, 3, 256, 256))  # Dummy image tensor
+    disparities = torch.zeros((1, 256, 256))  # Dummy disparity tensor
+    return rendered_images, disparities
+
 def get_embedder(multires, i=0):
     if i == -1:
         return nn.Identity(), 3
