@@ -699,7 +699,6 @@ def create_nerf(args, autodecoder_variables=None, ignore_optimizer=False):
         skips=skips,
         input_ch_views=input_ch_views,
         use_viewdirs=args.use_viewdirs,
-        approx_nonrigid_viewdirs=args.approx_nonrigid_viewdirs,
         time_conditioned_baseline=args.time_conditioned_baseline,
     ).to(device)
     grad_vars += list(
@@ -718,7 +717,6 @@ def create_nerf(args, autodecoder_variables=None, ignore_optimizer=False):
             use_viewdirs=args.use_viewdirs,
             ray_bender=ray_bender,
             embeddirs_fn=embeddirs_fn,
-            approx_nonrigid_viewdirs=args.approx_nonrigid_viewdirs,
             time_conditioned_baseline=args.time_conditioned_baseline,
         ).to(device)
         grad_vars += list(model_fine.parameters())
