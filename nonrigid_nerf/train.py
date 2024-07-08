@@ -505,6 +505,9 @@ def render(
     rays_o = torch.reshape(rays_o, [-1, 3]).float()
     rays_d = torch.reshape(rays_d, [-1, 3]).float()
 
+    # Construct rays from ray origins and directions
+    rays = torch.cat([rays_o[:, None, :], rays_d[:, None, :]], dim=-1)
+
     near, far = (
         near * torch.ones_like(rays_d[..., :1], device=device),
         far * torch.ones_like(rays_d[..., :1], device=device),
