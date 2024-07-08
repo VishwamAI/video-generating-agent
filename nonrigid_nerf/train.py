@@ -24,6 +24,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 ])
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from run_nerf_helpers import *
 from scripts.text_encoder import TextEncoder
@@ -66,6 +67,8 @@ def load_images(scene_dir):
             dummy_image.save(dummy_image_path)
         image_files = [dummy_image_path]
         logging.info(f"Created dummy image file: {dummy_image_path}")
+    else:
+        logging.info(f"Using existing image files: {image_files}")
     return image_files
 
 def batchify(fn, chunk, detailed_output=False):
