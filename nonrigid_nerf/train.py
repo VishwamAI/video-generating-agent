@@ -1544,10 +1544,7 @@ def main_function(args):
     fine_model = render_kwargs_train["network_fine"]
     ray_bender = render_kwargs_train["ray_bender"]
     parallel_training = get_parallelized_training_function(
-        coarse_model=coarse_model,
-        latents=ray_bending_latents_list,
-        fine_model=fine_model,
-        ray_bender=ray_bender,
+        coarse_model, latents, text_encoder, fine_model=fine_model, ray_bender=ray_bender
     )
     parallel_render = get_parallelized_render_function(
         coarse_model=coarse_model, fine_model=fine_model, ray_bender=ray_bender
