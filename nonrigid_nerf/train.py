@@ -1580,7 +1580,7 @@ def main_function(args):
     N_rand = args.N_rand
     # For random ray batching
     print("get rays")
-    rays = np.stack([get_rays_np(p, intrinsics[dataset_extras["imageid_to_viewid"][imageid]]) for imageid, p in enumerate(poses[:,:3,:4])], 0) # [N, ro+rd, H, W, 3]
+    rays = np.stack([get_rays_np(p, intrinsics[dataset_extras["imageid_to_viewid"].get(imageid, 0)]) for imageid, p in enumerate(poses[:,:3,:4])], 0) # [N, ro+rd, H, W, 3]
     print("done, concats")
 
     # attach index information (index among all images in dataset, x and y coordinate)
