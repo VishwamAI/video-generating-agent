@@ -1560,6 +1560,10 @@ def main_function(args):
 
     # Ensure the key exists in the dictionary before accessing it
     view_ids = []
+    # Ensure dataset_extras["imageid_to_viewid"] is a dictionary
+    if isinstance(dataset_extras["imageid_to_viewid"], list):
+        dataset_extras["imageid_to_viewid"] = {i: v for i, v in enumerate(dataset_extras["imageid_to_viewid"])}
+
     for imageid in range(poses.shape[0]):
         if imageid in dataset_extras["imageid_to_viewid"]:
             view_ids.append(intrinsics[dataset_extras["imageid_to_viewid"].get(imageid, 0)])
