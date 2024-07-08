@@ -1091,6 +1091,16 @@ def render_rays(
     """
     rays_o, rays_d = rays
 
+    # Create ray batch
+    rays_o = torch.reshape(rays_o, [-1, 3]).float()
+    rays_d = torch.reshape(rays_d, [-1, 3]).float()
+
+    # Construct rays from ray origins and directions
+    rays = torch.cat([rays_o[:, None, :], rays_d[:, None, :]], dim=-1)
+
+    # Ensure 'rays' is defined before any operations
+    print(f"Shape of rays: {rays.shape}")
+
     # Sample points along the ray
     z_vals = torch.linspace(0.0, 1.0, steps=N_samples)
     if not lindisp:
