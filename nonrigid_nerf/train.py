@@ -525,13 +525,12 @@ def render(
 
     # Adjust expansion operation to ensure compatibility with rays
     if rays.shape[-1] % additional_indices.shape[-1] != 0 and additional_indices.shape[-1] != 1:
-        raise ValueError(f"Shape mismatch: rays.shape[-1] ({rays.shape[-1]}) is not divisible by additional_indices.shape[-1] ({additional_indices.shape[-1]})")
+        raise ValueError(f"Shape mismatch: rays.shape[-1] ({rays.shape[-1]}) is not divisible by additional_indices.shape[-1] ({additional_indices.shape[-1]}).")
 
     # Reshape and expand additional_indices to match the dimensions of rays
     additional_indices_reshaped = additional_indices[:, None, :].expand(
         rays.shape[0], rays.shape[1], rays.shape[-1] // additional_indices.shape[-1], additional_indices.shape[-1]
     ).reshape(rays.shape[0], rays.shape[1], -1)
-    print(f"Shape of additional_indices after expansion: {additional_indices_reshaped.shape}")
 
     # Ensure the last dimension of additional_indices_reshaped matches rays
     if additional_indices_reshaped.shape[-1] != rays.shape[-1]:
