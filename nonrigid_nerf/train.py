@@ -1118,6 +1118,8 @@ def render_rays(
     else:
         z_vals = 1.0 / (1.0 / near * (1.0 - z_vals) + 1.0 / far * z_vals)
 
+    if 'rays' not in locals():
+        rays = torch.cat([rays_o[:, None, :], rays_d[:, None, :]], dim=-1)
     z_vals = z_vals.expand([rays_o.shape[0], N_samples])
 
     if perturb > 0.0:
