@@ -1630,6 +1630,12 @@ def main_function(args):
     print("done, concats")
 
     # attach index information (index among all images in dataset, x and y coordinate)
+    # Ensure intrinsics is a list of dictionaries
+    if not isinstance(intrinsics, list) or not intrinsics:
+        intrinsics = [{"height": 100, "width": 100, "focal": 50.0}]  # Default intrinsics
+
+    # Access intrinsics correctly
+    H, W, focal = intrinsics[0]["height"], intrinsics[0]["width"], intrinsics[0]["focal"]
     image_indices, y_coordinates, x_coordinates = np.meshgrid(
         np.arange(images.shape[0]), np.arange(intrinsics[0]["height"]), np.arange(intrinsics[0]["width"]), indexing="ij"
     )  # keep consistent with code in get_rays and get_rays_np. (0,0,0) is coordinate of the top-left corner of the first image, i.e. of [0,0,0]. each array has shape images x height x width
