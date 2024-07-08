@@ -1722,7 +1722,7 @@ def main_function(args):
 
     additional_indices_reshaped = additional_indices[:, None, None, :].expand(
         rays.shape[0], rays.shape[1], rays.shape[2], additional_indices.shape[-1]
-    )
+    ).reshape(rays.shape[0], rays.shape[1], rays.shape[2], -1)
     print(f"Shape of additional_indices after expansion: {additional_indices_reshaped.shape}")
 
     # Print shapes for debugging
