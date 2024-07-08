@@ -210,7 +210,21 @@ jobs:
         fi
     - name: Train model
       run: |
-        python nonrigid_nerf/train.py --config nonrigid_nerf/configs/training_config.txt --datadir preprocessed_data/nerf_llff_data/trex
+        python nonrigid_nerf/train.py --config nonrigid_nerf/configs/training_config.txt --datadir preprocessed_data/nerf_llff_data/trex 2> train_model_error.log
+
+    - name: Display train model error log
+      if: failure()
+      run: |
+        echo "Displaying contents of train_model_error.log:"
+        cat train_model_error.log
+
+    - name: Upload train model error log
+      if: failure()
+      uses: actions/upload-artifact@v2
+      with:
+        name: train_model_error_log
+        path: train_model_error.log
+
     - name: Run tests
       run: |
         python -m unittest discover -s tests
