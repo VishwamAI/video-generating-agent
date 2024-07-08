@@ -1662,7 +1662,7 @@ def main_function(args):
         [
             rays,
             images_tensor.expand(rays.shape[0], -1, rays.shape[2], rays.shape[3], rays.shape[4]),
-            additional_indices[:, None].expand(rays.shape[0], rays.shape[1], rays.shape[2], rays.shape[3], -1)
+            additional_indices[:, None].expand(rays.shape[0], rays.shape[1], rays.shape[2], rays.shape[3], additional_indices.shape[-1])
         ],
         1
     )
