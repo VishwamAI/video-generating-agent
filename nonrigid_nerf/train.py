@@ -1293,6 +1293,11 @@ def config_parser():
         default="0.75",
         help="scales the overall scene, NeRF uses 0.75. is ignored.",
     )
+    parser.add_argument(
+        "--no_ndc",
+        action='store_true',
+        help="Set this flag to disable normalized device coordinates (NDC) for forward-facing scenes",
+    )
 
     # logging/saving options
     parser.add_argument(
