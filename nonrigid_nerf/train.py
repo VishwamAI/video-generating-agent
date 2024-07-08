@@ -508,6 +508,9 @@ def render(
     # Construct rays from ray origins and directions
     rays = torch.cat([rays_o[:, None, :], rays_d[:, None, :]], dim=-1)
 
+    # Ensure 'rays' is defined before any operations
+    print(f"Shape of rays: {rays.shape}")
+
     near, far = (
         near * torch.ones_like(rays_d[..., :1], device=device),
         far * torch.ones_like(rays_d[..., :1], device=device),
