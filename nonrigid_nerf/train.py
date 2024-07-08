@@ -1562,7 +1562,7 @@ def main_function(args):
     view_ids = []
     for imageid in range(poses.shape[0]):
         if imageid in dataset_extras["imageid_to_viewid"]:
-            view_ids.append(intrinsics[dataset_extras["imageid_to_viewid"][imageid]])
+            view_ids.append(intrinsics[dataset_extras["imageid_to_viewid"].get(imageid, 0)])
         else:
             # Provide a default value if the key does not exist
             view_ids.append(intrinsics[0])  # Assuming 0 is a valid default key
