@@ -1657,10 +1657,11 @@ def main_function(args):
     images_reshaped = torch.ones((rays.shape[0], 1, rays.shape[2], rays.shape[3], 1), device=device)
     rays = torch.tensor(rays).to(device)
     additional_indices = torch.tensor(additional_indices).to(device)
+    images_tensor = torch.tensor(images[:, None]).to(device)
     rays_rgb = torch.cat(
         [
             rays,
-            images[:, None].expand(rays.shape[0], -1, rays.shape[2], rays.shape[3], rays.shape[4]),
+            images_tensor.expand(rays.shape[0], -1, rays.shape[2], rays.shape[3], rays.shape[4]),
             additional_indices[:, None].expand(rays.shape[0], -1, rays.shape[2], rays.shape[3], rays.shape[4])
         ],
         1
