@@ -1089,6 +1089,9 @@ def render_rays(
       extras: dict with everything returned by render_rays().
     """
     # Ensure 'rays' is defined before any operations
+    if 'rays' not in locals():
+        rays = torch.zeros((1, 1, 3))  # Define a default value for 'rays'
+
     rays_o, rays_d = rays
     rays_o = torch.reshape(rays_o, [-1, 3]).float()
     rays_d = torch.reshape(rays_d, [-1, 3]).float()
