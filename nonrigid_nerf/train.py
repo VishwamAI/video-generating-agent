@@ -1098,7 +1098,6 @@ def render_rays(
     rays = torch.cat([rays_o[:, None, :], rays_d[:, None, :]], dim=-1)
     print(f"Shape of rays after concatenation: {rays.shape}")
 
-    # Adjust expansion operation to ensure compatibility with rays
     if rays.shape[-1] % additional_indices.shape[-1] != 0 and additional_indices.shape[-1] != 1:
         raise ValueError(f"Shape mismatch: rays.shape[-1] ({rays.shape[-1]}) is not divisible by additional_indices.shape[-1] ({additional_indices.shape[-1]}).")
 
