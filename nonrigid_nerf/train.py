@@ -210,6 +210,7 @@ def batchify_rays(
     additional_pixel_information,
     chunk=1024 * 32,
     detailed_output=False,
+    rays=None,  # Add rays parameter
     **kwargs,
 ):
     """Render rays in smaller minibatches to avoid OOM."""
@@ -227,6 +228,7 @@ def batchify_rays(
 
         ret = render_rays(
             rays_flat[i : i + chunk],
+            rays=rays[i : i + chunk],  # Pass rays parameter
             additional_pixel_information=relevant_additional_pixel_info,
             detailed_output=detailed_output,
             **kwargs,
@@ -981,8 +983,66 @@ def raw2outputs(raw, z_vals, rays_d, raw_noise_std=0, white_bkgd=False, pytest=F
     return rgb_map, disp_map, acc_map, opacity_alpha, visibility_weights, depth_map
 
 
+def render(
+    H, W, focal, chunk=1024 * 32, rays=None, c2w=None, ndc=True, near=0.0, far=1.0,
+    use_viewdirs=False, c2w_staticcam=None, **dummy_kwargs
+):
+    """Render rays
+    Args:
+      H: int. Height of image in pixels.
+      W: int. Width of image in pixels.
+      focal: float. Focal length of pinhole camera.
+      chunk: int. Maximum number of rays to process simultaneously. Used to
+        control maximum memory usage. Does not affect final results.
+      rays: array of shape [2, batch_size, 3]. Ray origin and direction for
+        each example in batch.
+      c2w: array of shape [3, 4]. Camera-to-world transformation matrix.
+      ndc: bool. If True, represent ray origin, direction in NDC coordinates.
+      near: float or array of shape [batch_size]. Nearest distance for a ray.
+      far: float or array of shape [batch_size]. Farthest distance for a ray.
+      use_viewdirs: bool. If True, use viewing direction of a point in space in
+        model.
+      c2w_staticcam: array of shape [3, 4]. If not None, use this transformation matrix for
+        camera while using c2w for viewing directions.
+    Returns:
+      rgb_map: [batch_size, 3]. Predicted RGB values for rays.
+      disp_map: [batch_size]. Disparity map. Inverse of depth.
+      acc_map: [batch_size]. Accumulated opacity (alpha) along a ray.
+    """
+    if c2w is not None:
+        # special case to render full image
+        rays_o, rays_d = get_rays(H, W, focal, c2w)
+    else:
+        # use provided ray batch
+        rays_o, rays_d = rays
+
+    if use_viewdirs:
+        viewdirs = rays_d / torch.norm(rays_d, dim=-1, keepdim=True)
+        viewdirs = torch.reshape(viewdirs, [-1, 3])
+    else:
+        viewdirs = None
+
+    sh = rays_d.shape  # [..., 3]
+    if ndc:
+        # for forward facing scenes
+        rays_o, rays_d = ndc_rays(H, W, focal, 1.0, rays_o, rays_d)
+
+    # Create ray batch
+    rays = torch.cat([rays_o, rays_d], -1)
+    if use_viewdirs:
+        rays = torch.cat([rays, viewdirs], -1)
+
+    # Render and reshape
+    all_ret = batchify_rays(rays, chunk, rays=rays, **dummy_kwargs)
+    for k in all_ret:
+        k_sh = list(sh[:-1]) + list(all_ret[k].shape[1:])
+        all_ret[k] = torch.reshape(all_ret[k], k_sh)
+
+    return all_ret
+
 def render_rays(
     ray_batch,
+    rays,  # Add rays parameter
     network_fn,
     network_query_fn,
     N_samples,
@@ -1004,6 +1064,8 @@ def render_rays(
       ray_batch: array of shape [batch_size, ...]. All information necessary
         for sampling along a ray, including: ray origin, ray direction, min
         dist, max dist, and unit-magnitude viewing direction.
+      rays: array of shape [2, batch_size, 3]. Ray origin and direction for
+        each example in batch.
       network_fn: function. Model for predicting RGB and density at each point
         in space.
       network_query_fn: function used for passing queries to network_fn.
@@ -1016,33 +1078,27 @@ def render_rays(
         These samples are only passed to network_fine.
       network_fine: "fine" network with same spec as network_fn.
       white_bkgd: bool. If True, assume a white background.
-      raw_noise_std: ...
-      verbose: bool. If True, print more debugging info.
+      raw_noise_std: float. Standard deviation of noise added to raw predictions.
+      additional_pixel_information: dict. Additional information for each pixel.
+      detailed_output: bool. If True, return detailed output.
+      verbose: bool. If True, print debug information.
+      pytest: bool. If True, use fixed random seed for testing.
     Returns:
-      rgb_map: [num_rays, 3]. Estimated RGB color of a ray. Comes from fine model.
-      disp_map: [num_rays]. Disparity map. 1 / depth.
-      acc_map: [num_rays]. Accumulated opacity along each ray. Comes from fine model.
-      raw: [num_rays, num_samples, 4]. Raw predictions from model.
-      rgb0: See rgb_map. Output for coarse model.
-      disp0: See disp_map. Output for coarse model.
-      acc0: See acc_map. Output for coarse model.
-      z_std: [num_rays]. Standard deviation of distances along ray for each
-        sample.
+      rgb_map: [batch_size, 3]. Predicted RGB values for rays.
+      disp_map: [batch_size]. Disparity map. Inverse of depth.
+      acc_map: [batch_size]. Accumulated opacity (alpha) along a ray.
+      extras: dict with everything returned by render_rays().
     """
+    rays_o, rays_d = rays
 
-    N_rays = ray_batch.shape[0]
-    rays_o, rays_d = ray_batch[:, 0:3], ray_batch[:, 3:6]  # [N_rays, 3] each
-    viewdirs = ray_batch[:, -3:] if ray_batch.shape[-1] > 8 else None
-    bounds = torch.reshape(ray_batch[..., 6:8], [-1, 1, 2])
-    near, far = bounds[..., 0], bounds[..., 1]  # [-1,1]
-
-    t_vals = torch.linspace(0.0, 1.0, steps=N_samples, device=device)
+    # Sample points along the ray
+    z_vals = torch.linspace(0.0, 1.0, steps=N_samples)
     if not lindisp:
-        z_vals = near * (1.0 - t_vals) + far * (t_vals)
+        z_vals = near * (1.0 - z_vals) + far * z_vals
     else:
-        z_vals = 1.0 / (1.0 / near * (1.0 - t_vals) + 1.0 / far * (t_vals))
+        z_vals = 1.0 / (1.0 / near * (1.0 - z_vals) + 1.0 / far * z_vals)
 
-    z_vals = z_vals.expand([N_rays, N_samples])
+    z_vals = z_vals.expand([rays_o.shape[0], N_samples])
 
     if perturb > 0.0:
         # get intervals between samples
@@ -1126,6 +1182,15 @@ def render_rays(
         ret["raw"] = raw
     if N_importance > 0:
         pass
+
+# Construct rays from ray origins and directions
+rays = torch.cat([rays_o[:, None, :], rays_d[:, None, :]], dim=-1)
+
+# Ensure 'rays' is defined before any operations
+print(f"Shape of rays: {rays.shape}")
+
+if rays.shape[3] % additional_indices.shape[-1] != 0 and additional_indices.shape[-1] != 1:
+    raise ValueError(f"Shape mismatch: rays.shape[3] ({rays.shape[3]}) is not divisible by additional_indices.shape[-1] ({additional_indices.shape[-1]})")
 
 # Define rays before its first use
 if not intrinsics:
