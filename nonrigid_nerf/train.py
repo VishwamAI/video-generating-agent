@@ -1207,6 +1207,22 @@ def render_rays(
     if N_importance > 0:
         pass
 
+    # Ensure 'rays' is defined before any operations
+    if 'rays' not in locals():
+        rays = torch.cat([rays_o[:, None, :], rays_d[:, None, :]], dim=-1)
+
+    print(f"Shape of rays: {rays.shape}")
+
+    near, far = (
+        near * torch.ones_like(rays_d[..., :1], device=device),
+        far * torch.ones_like(rays_d[..., :1], device=device),
+    )
+    print(f"Shape of rays_o: {rays_o.shape}")
+    print(f"Shape of rays_d: {rays_d.shape}")
+    print(f"Shape of near: {near.shape}")
+    print(f"Shape of far: {far.shape}")
+    print(f"Shape of viewdirs: {viewdirs.shape if use_viewdirs else 'N/A'}")
+
 # Construct rays from ray origins and directions
 rays = torch.cat([rays_o[:, None, :], rays_d[:, None, :]], dim=-1)
 
