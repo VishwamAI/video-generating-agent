@@ -1094,13 +1094,26 @@ def render_rays(
     rays_o = torch.reshape(rays_o, [-1, 3]).float()
     rays_d = torch.reshape(rays_d, [-1, 3]).float()
 
-    # Ensure 'rays' is defined before any operations
-    if 'rays' not in locals():
-        rays = torch.cat([rays_o[:, None, :], rays_d[:, None, :]], dim=-1)
-        print(f"Shape of rays: {rays.shape}")
+    # Construct rays from ray origins and directions
+    rays = torch.cat([rays_o[:, None, :], rays_d[:, None, :]], dim=-1)
 
-    if rays.shape[3] % additional_indices.shape[-1] != 0 and additional_indices.shape[-1] != 1:
-        raise ValueError(f"Shape mismatch: rays.shape[3] ({rays.shape[3]}) is not divisible by additional_indices.shape[-1] ({additional_indices.shape[-1]}))")
+    # Ensure 'rays' is defined before any operations
+    print(f"Shape of rays: {rays.shape}")
+
+    # Adjust expansion operation to ensure compatibility with rays
+    if rays.shape[-1] % additional_indices.shape[-1] != 0 and additional_indices.shape[-1] != 1:
+        raise ValueError(f"Shape mismatch: rays.shape[-1] ({rays.shape[-1]}) is not divisible by additional_indices.shape[-1] ({additional_indices.shape[-1]}).")
+
+    # Reshape and expand additional_indices to match the dimensions of rays
+    additional_indices_reshaped = additional_indices[:, None, :].expand(
+        rays.shape[0], rays.shape[1], rays.shape[-1] // additional_indices.shape[-1], additional_indices.shape[-1]
+    ).reshape(rays.shape[0], rays.shape[1], -1)
+
+    # Ensure the last dimension of additional_indices_reshaped matches rays
+    if additional_indices_reshaped.shape[-1] != rays.shape[-1]:
+        additional_indices_reshaped = additional_indices_reshaped.repeat(1, 1, rays.shape[-1] // additional_indices_reshaped.shape[-1] + 1)[:, :, :rays.shape[-1]]
+
+    rays = torch.cat([rays, additional_indices_reshaped], -1)
 
     # Sample points along the ray
     z_vals = torch.linspace(0.0, 1.0, steps=N_samples)
