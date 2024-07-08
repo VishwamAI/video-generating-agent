@@ -1099,7 +1099,7 @@ def render_rays(
     rays_o = torch.reshape(rays_o, [-1, 3]).float()
     rays_d = torch.reshape(rays_d, [-1, 3]).float()
     rays = torch.cat([rays_o[:, None, :], rays_d[:, None, :]], dim=-1)
-    print(f"Shape of rays: {rays.shape}")
+    print(f"Shape of rays after concatenation: {rays.shape}")
 
     # Adjust expansion operation to ensure compatibility with rays
     if rays.shape[-1] % additional_indices.shape[-1] != 0 and additional_indices.shape[-1] != 1:
@@ -1115,6 +1115,7 @@ def render_rays(
         additional_indices_reshaped = additional_indices_reshaped.repeat(1, 1, rays.shape[-1] // additional_indices_reshaped.shape[-1] + 1)[:, :, :rays.shape[-1]]
 
     rays = torch.cat([rays, additional_indices_reshaped], -1)
+    print(f"Shape of rays after adding additional_indices: {rays.shape}")
 
     # Sample points along the ray
     z_vals = torch.linspace(0.0, 1.0, steps=N_samples)
