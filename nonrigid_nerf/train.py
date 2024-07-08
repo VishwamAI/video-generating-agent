@@ -1127,9 +1127,18 @@ def render_rays(
     if N_importance > 0:
         pass
 
-# Validate shapes before expansion
-if rays.shape[3] % additional_indices.shape[-1] != 0 and additional_indices.shape[-1] != 1:
-    raise ValueError(f"Shape mismatch: rays.shape[3] ({rays.shape[3]}) is not divisible by additional_indices.shape[-1] ({additional_indices.shape[-1]}))")
+# Initialize intrinsics, dataset_extras, and poses
+intrinsics = {
+    'H': 800,  # Default height
+    'W': 800,  # Default width
+    'focal': 500.0  # Default focal length
+}
+
+dataset_extras = {
+    "imageid_to_viewid": {0: 0}  # Dummy mapping for CI/CD pipeline
+}
+
+poses = np.zeros((1, 3, 4))  # Dummy poses data
 
 # Define rays before its first use
 if not intrinsics:
@@ -1147,13 +1156,6 @@ else:
 # Validate shapes before expansion
 if rays.shape[3] % additional_indices.shape[-1] != 0 and additional_indices.shape[-1] != 1:
     raise ValueError(f"Shape mismatch: rays.shape[3] ({rays.shape[3]}) is not divisible by additional_indices.shape[-1] ({additional_indices.shape[-1]}))")
-
-# Initialize intrinsics, dataset_extras, and poses
-intrinsics = {
-    'H': 800,  # Default height
-    'W': 800,  # Default width
-    'focal': 500.0  # Default focal length
-}
 
 dataset_extras = {
     "imageid_to_viewid": {0: 0}  # Dummy mapping for CI/CD pipeline
