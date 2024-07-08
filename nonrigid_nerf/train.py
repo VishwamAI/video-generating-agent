@@ -1123,6 +1123,18 @@ def render_rays(
     if N_importance > 0:
         pass
 
+if not intrinsics:
+    logging.error("Intrinsics dictionary is empty. Using default values.")
+    default_intrinsics = {'H': 100, 'W': 100, 'focal': 1.0}
+    rays = np.stack([get_rays_np(p, default_intrinsics) for imageid, p in enumerate(poses[:,:3,:4])], 0) # [N, ro+rd, H, W, 3]
+else:
+    default_intrinsics = {
+        'H': 800,  # Default height
+        'W': 800,  # Default width
+        'focal': 500.0  # Default focal length
+    }
+    rays = np.stack([get_rays_np(p, intrinsics.get(dataset_extras["imageid_to_viewid"].get(imageid, next(iter(intrinsics))), default_intrinsics)) for imageid, p in enumerate(poses[:,:3,:4])], 0) # [N, ro+rd, H, W, 3]
+
 # Define rays before its first use
 if not intrinsics:
     logging.error("Intrinsics dictionary is empty. Using default values.")
