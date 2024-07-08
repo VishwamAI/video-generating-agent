@@ -531,6 +531,10 @@ def render(
     ).reshape(rays.shape[0], rays.shape[1], -1)
     print(f"Shape of additional_indices after expansion: {additional_indices_reshaped.shape}")
 
+    # Ensure the last dimension of additional_indices_reshaped matches rays
+    if additional_indices_reshaped.shape[-1] != rays.shape[-1]:
+        additional_indices_reshaped = additional_indices_reshaped.expand(rays.shape[0], rays.shape[1], rays.shape[-1])
+
     rays = torch.cat([rays, additional_indices_reshaped], -1)
     if use_viewdirs:
         rays = torch.cat([rays, viewdirs], -1)
