@@ -699,7 +699,6 @@ def create_nerf(args, autodecoder_variables=None, ignore_optimizer=False):
         skips=skips,
         input_ch_views=input_ch_views,
         use_viewdirs=args.use_viewdirs,
-        time_conditioned_baseline=args.time_conditioned_baseline,
     ).to(device)
     grad_vars += list(
         model.parameters()
