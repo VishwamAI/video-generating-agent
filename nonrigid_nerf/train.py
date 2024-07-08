@@ -1649,8 +1649,9 @@ def main_function(args):
     print(f"Shape of additional_indices[:, None]: {additional_indices[:, None].shape}")
 
     # Ensure all arrays have the same number of dimensions before concatenation
+    images_reshaped = images[:, None].reshape(rays.shape[0], 1, rays.shape[2], rays.shape[3], 1)
     rays_rgb = np.concatenate(
-        [rays, images[:, None], additional_indices[:, None]], 1
+        [rays, images_reshaped, additional_indices[:, None]], 1
     )  # [N, ro+rd+rgb+ind, H, W, 3]
 
     rays_rgb = np.transpose(rays_rgb, [0, 2, 3, 1, 4])  # [N, H, W, ro+rd+rgb+ind, 3]
