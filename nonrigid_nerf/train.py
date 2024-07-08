@@ -1088,13 +1088,11 @@ def render_rays(
       acc_map: [batch_size]. Accumulated opacity (alpha) along a ray.
       extras: dict with everything returned by render_rays().
     """
+    # Ensure 'rays' is defined before any operations
     rays_o, rays_d = rays
-
-    # Create ray batch
     rays_o = torch.reshape(rays_o, [-1, 3]).float()
     rays_d = torch.reshape(rays_d, [-1, 3]).float()
-
-    # Ensure 'rays' is defined before any operations
+    # Create ray batch
     rays = torch.cat([rays_o[:, None, :], rays_d[:, None, :]], dim=-1)
     print(f"Shape of rays after concatenation: {rays.shape}")
 
