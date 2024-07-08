@@ -514,7 +514,17 @@ def render(
     print(f"Shape of near: {near.shape}")
     print(f"Shape of far: {far.shape}")
     print(f"Shape of viewdirs: {viewdirs.shape if use_viewdirs else 'N/A'}")
-    rays = torch.cat([rays_o, rays_d, near, far], -1)
+
+    # Adjust expansion operation to ensure compatibility with rays
+    if rays.shape[3] % additional_indices.shape[-1] != 0 and additional_indices.shape[-1] != 1:
+        raise ValueError(f"Shape mismatch: rays.shape[3] ({rays.shape[3]}) is not divisible by additional_indices.shape[3] ({additional_indices.shape[3]})")
+
+    additional_indices_reshaped = additional_indices[:, None, None, None, :].expand(
+        rays.shape[0], rays.shape[1], rays.shape[2], rays.shape[3], additional_indices.shape[-1]
+    )
+    print(f"Shape of additional_indices after expansion: {additional_indices_reshaped.shape}")
+
+    rays = torch.cat([rays, additional_indices_reshaped], -1)
     if use_viewdirs:
         rays = torch.cat([rays, viewdirs], -1)
 
