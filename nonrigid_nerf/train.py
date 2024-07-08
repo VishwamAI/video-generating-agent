@@ -1660,12 +1660,12 @@ def main_function(args):
     images_tensor = torch.tensor(images[:, None]).to(device)
 
     # Validate shapes before expansion
-    if rays.shape[3] % additional_indices.shape[-1] != 0:
+    if rays.shape[3] % additional_indices.shape[-1] != 0 and additional_indices.shape[-1] != 1:
         raise ValueError(f"Shape mismatch: rays.shape[3] ({rays.shape[3]}) is not divisible by additional_indices.shape[-1] ({additional_indices.shape[-1]})")
 
-    # Reshape additional_indices to match rays dimensions
+    # Reshape additional_indices to match rays dimensions, allowing for broadcasting
     additional_indices_reshaped = additional_indices[:, None, :, :, :].expand(
-        rays.shape[0], rays.shape[1], rays.shape[2], rays.shape[3], additional_indices.shape[-1]
+        rays.shape[0], rays.shape[1], rays.shape[2], rays.shape[3], -1
     )
 
     # Print shapes for debugging
