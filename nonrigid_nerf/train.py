@@ -1543,9 +1543,14 @@ def main_function(args):
     coarse_model = render_kwargs_train["network_fn"]
     fine_model = render_kwargs_train["network_fine"]
     ray_bender = render_kwargs_train["ray_bender"]
+
+    # Ensure 'latents' is defined before use
+    latents = None  # Define 'latents' with a default value
+
     parallel_training = get_parallelized_training_function(
         coarse_model, latents, text_encoder, fine_model=fine_model, ray_bender=ray_bender
     )
+
     parallel_render = get_parallelized_render_function(
         coarse_model=coarse_model, fine_model=fine_model, ray_bender=ray_bender
     )  # only used by render_path() at test time, not for training/optimization
