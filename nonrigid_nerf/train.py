@@ -25,7 +25,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from .run_nerf_helpers import *
+from nonrigid_nerf.run_nerf_helpers import *
 from scripts.text_encoder import TextEncoder
 #from load_llff import load_llff_data_multi_view
 from nonrigid_nerf.load_llff import load_llff_data
