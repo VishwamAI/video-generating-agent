@@ -509,6 +509,11 @@ def render(
         near * torch.ones_like(rays_d[..., :1], device=device),
         far * torch.ones_like(rays_d[..., :1], device=device),
     )
+    print(f"Shape of rays_o: {rays_o.shape}")
+    print(f"Shape of rays_d: {rays_d.shape}")
+    print(f"Shape of near: {near.shape}")
+    print(f"Shape of far: {far.shape}")
+    print(f"Shape of viewdirs: {viewdirs.shape if use_viewdirs else 'N/A'}")
     rays = torch.cat([rays_o, rays_d, near, far], -1)
     if use_viewdirs:
         rays = torch.cat([rays, viewdirs], -1)
