@@ -1524,7 +1524,7 @@ def main_function(args):
         latent.requires_grad = True
 
     # Create nerf model
-    render_kwargs_train, render_kwargs_test, start, grad_vars, optimizer = create_nerf(
+    render_kwargs_train, render_kwargs_test, start, grad_vars, optimizer, text_encoder = create_nerf(
         args, autodecoder_variables=ray_bending_latents_list
     )
     print("start: " + str(start) + " args.N_iters: " + str(args.N_iters), flush=True)
