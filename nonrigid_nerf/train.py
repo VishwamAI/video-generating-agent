@@ -1134,13 +1134,6 @@ else:
         'focal': 500.0  # Default focal length
     }
     rays = np.stack([get_rays_np(p, intrinsics.get(dataset_extras["imageid_to_viewid"].get(imageid, next(iter(intrinsics))), default_intrinsics)) for imageid, p in enumerate(poses[:,:3,:4])], 0) # [N, ro+rd, H, W, 3]
-    rays = np.stack([get_rays_np(p, intrinsics.get(dataset_extras["imageid_to_viewid"].get(imageid, next(iter(intrinsics))), default_intrinsics)) for imageid, p in enumerate(poses[:,:3,:4])], 0) # [N, ro+rd, H, W, 3]
-    rays = np.stack([get_rays_np(p, intrinsics.get(dataset_extras["imageid_to_viewid"].get(imageid, next(iter(intrinsics))), default_intrinsics)) for imageid, p in enumerate(poses[:,:3,:4])], 0) # [N, ro+rd, H, W, 3]
-
-# Validate shapes before expansion
-if rays.shape[3] % additional_indices.shape[-1] != 0 and additional_indices.shape[-1] != 1:
-    raise ValueError(f"Shape mismatch: rays.shape[3] ({rays.shape[3]}) is not divisible by additional_indices.shape[-1] ({additional_indices.shape[-1]})")
-    rays = np.stack([get_rays_np(p, intrinsics.get(dataset_extras["imageid_to_viewid"].get(imageid, next(iter(intrinsics))), default_intrinsics)) for imageid, p in enumerate(poses[:,:3,:4])], 0) # [N, ro+rd, H, W, 3]
 
 # Validate shapes before expansion
 if rays.shape[3] % additional_indices.shape[-1] != 0 and additional_indices.shape[-1] != 1:
