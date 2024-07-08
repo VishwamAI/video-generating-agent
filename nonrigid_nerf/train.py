@@ -1096,8 +1096,6 @@ def render_rays(
 
     # Construct rays from ray origins and directions
     rays = torch.cat([rays_o[:, None, :], rays_d[:, None, :]], dim=-1)
-
-    # Ensure 'rays' is defined before any operations
     print(f"Shape of rays: {rays.shape}")
 
     # Adjust expansion operation to ensure compatibility with rays
