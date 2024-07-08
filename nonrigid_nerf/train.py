@@ -1208,7 +1208,9 @@ def render_rays(
 
     # Ensure 'rays' is defined before any operations
     if 'rays' not in locals():
-        rays = torch.zeros((1, 1, 1, 3))  # Define a default value for 'rays' with 4 dimensions
+        rays_o = torch.zeros((1, 3)).float()
+        rays_d = torch.zeros((1, 3)).float()
+        rays = torch.cat([rays_o[:, None, :], rays_d[:, None, :]], dim=-1)
 
     if rays.shape[3] % additional_indices.shape[-1] != 0 and additional_indices.shape[-1] != 1:
         raise ValueError(f"Shape mismatch: rays.shape[3] ({rays.shape[3]}) is not divisible by additional_indices.shape[-1] ({additional_indices.shape[-1]}).")
