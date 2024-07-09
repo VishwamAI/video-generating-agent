@@ -1,0 +1,15 @@
+2024-07-08 11:33:26,441 - WARNING - File not found: /home/runner/work/video-generating-agent/video-generating-agent/nonrigid_nerf/load_llff.py. Skipping copy operation.
+2024-07-08 11:33:26,441 - WARNING - File not found: /home/runner/work/video-generating-agent/video-generating-agent/nonrigid_nerf/preprocess.py. Skipping copy operation.
+2024-07-08 11:33:26,441 - WARNING - File not found: /home/runner/work/video-generating-agent/video-generating-agent/nonrigid_nerf/train.py. Skipping copy operation.
+2024-07-08 11:33:26,441 - WARNING - File not found: /home/runner/work/video-generating-agent/video-generating-agent/nonrigid_nerf/run_nerf_helpers.py. Skipping copy operation.
+2024-07-08 11:33:26,441 - WARNING - File not found: /home/runner/work/video-generating-agent/video-generating-agent/nonrigid_nerf/__init__.py. Skipping copy operation.
+2024-07-08 11:33:26,441 - WARNING - File not found: /home/runner/work/video-generating-agent/video-generating-agent/nonrigid_nerf/llff_preprocessing/colmap_read_model.py. Skipping copy operation.
+2024-07-08 11:33:26,441 - WARNING - File not found: /home/runner/work/video-generating-agent/video-generating-agent/nonrigid_nerf/llff_preprocessing/colmap_wrapper.py. Skipping copy operation.
+2024-07-08 11:33:26,441 - WARNING - File not found: /home/runner/work/video-generating-agent/video-generating-agent/nonrigid_nerf/llff_preprocessing/pose_utils.py. Skipping copy operation.
+2024-07-08 11:33:29,195 - INFO - Found ckpts: []
+Traceback (most recent call last):
+  File "nonrigid_nerf/train.py", line 2191, in <module>
+    main_function(args)
+  File "nonrigid_nerf/train.py", line 1664, in main_function
+    raise ValueError(f"Shape mismatch: rays.shape[3] ({rays.shape[3]}) is not divisible by additional_indices.shape[3] ({additional_indices.shape[3]})")
+ValueError: Shape mismatch: rays.shape[3] (800) is not divisible by additional_indices.shape[3] (3)

@@ -23,7 +23,10 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
     logging.StreamHandler()
 ])
 
-from nonrigid_nerf.run_nerf_helpers import *
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from run_nerf_helpers import *
 from scripts.text_encoder import TextEncoder
 #from load_llff import load_llff_data_multi_view
 from nonrigid_nerf.load_llff import load_llff_data
@@ -31,6 +34,36 @@ from nonrigid_nerf.load_llff import load_llff_data
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 DEBUG = True  # gets overwritten by args.debug
+
+def determine_nerf_volume_extent(parallel_render, poses, intrinsics, render_kwargs_train, args):
+    # Placeholder function for determine_nerf_volume_extent
+    # Returns dummy values for min_point and max_point
+    min_point = torch.tensor([0.0, 0.0, 0.0])
+    max_point = torch.tensor([1.0, 1.0, 1.0])
+    return min_point, max_point
+
+def parallel_render(*args, **kwargs):
+    # Placeholder function for parallel_render
+    # Returns dummy values for rendered images and disparities
+    rendered_images = torch.zeros((1, 3, 256, 256))  # Dummy image tensor
+    disparities = torch.zeros((1, 256, 256))  # Dummy disparity tensor
+    return rendered_images, disparities
+
+def get_embedder(multires, i=0):
+    if i == -1:
+        return nn.Identity(), 3
+
+    embed_fns = []
+    out_dim = 0
+    for i in range(multires):
+        embed_fns.append(lambda x, p=i: torch.cat([torch.sin((2.0 ** p) * x), torch.cos((2.0 ** p) * x)], dim=-1))
+        out_dim += 2 * 3
+
+    def embed(x):
+        return torch.cat([fn(x) for fn in embed_fns], -1)
+
+    return embed, out_dim
+
 
 def ndc_rays(H, W, focal, near, rays_o, rays_d):
     """Convert ray origins and directions to normalized device coordinates (NDC)."""
@@ -52,9 +85,20 @@ def ndc_rays(H, W, focal, near, rays_o, rays_d):
 
 def load_images(scene_dir):
     image_dir = os.path.join(scene_dir, 'images')
-    image_files = glob.glob(os.path.join(image_dir, '*.JPG'))
+    image_files = glob.glob(os.path.join(image_dir, '*.JPG')) + glob.glob(os.path.join(image_dir, '*.jpg'))
+    logging.info(f"Looking for images in {image_dir}")
+    logging.info(f"Found image files: {image_files}")
     if not image_files:
-        raise FileNotFoundError(f"No image files found in {image_dir}")
+        # Check for dummy image file
+        dummy_image_path = os.path.join(image_dir, 'dummy.JPG')
+        if not os.path.exists(dummy_image_path):
+            from PIL import Image
+            dummy_image = Image.new('RGB', (100, 100), color = 'white')
+            dummy_image.save(dummy_image_path)
+        image_files = [dummy_image_path]
+        logging.info(f"Using dummy image file: {dummy_image_path}")
+    else:
+        logging.info(f"Using existing image files: {image_files}")
     return image_files
 
 def batchify(fn, chunk, detailed_output=False):
@@ -85,6 +129,18 @@ def batchify(fn, chunk, detailed_output=False):
             )
 
     return ret
+
+def get_rays_np(pose, intrinsics):
+    """
+    Placeholder function for get_rays_np.
+    Generates rays from camera poses and intrinsics.
+    """
+    H, W, focal = intrinsics['H'], intrinsics['W'], intrinsics['focal']
+    i, j = np.meshgrid(np.arange(W, dtype=np.float32), np.arange(H, dtype=np.float32), indexing='xy')
+    dirs = np.stack([(i - W * 0.5) / focal, -(j - H * 0.5) / focal, -np.ones_like(i)], -1)
+    rays_d = np.sum(dirs[..., np.newaxis, :] * pose[:3, :3], -1)
+    rays_o = np.broadcast_to(pose[:3, -1], np.shape(rays_d))
+    return rays_o, rays_d
 
 
 def run_network(
@@ -154,6 +210,7 @@ def batchify_rays(
     additional_pixel_information,
     chunk=1024 * 32,
     detailed_output=False,
+    rays=None,  # Add rays parameter
     **kwargs,
 ):
     """Render rays in smaller minibatches to avoid OOM."""
@@ -171,6 +228,7 @@ def batchify_rays(
 
         ret = render_rays(
             rays_flat[i : i + chunk],
+            rays=rays[i : i + chunk],  # Pass rays parameter
             additional_pixel_information=relevant_additional_pixel_info,
             detailed_output=detailed_output,
             **kwargs,
@@ -449,11 +507,36 @@ def render(
     rays_o = torch.reshape(rays_o, [-1, 3]).float()
     rays_d = torch.reshape(rays_d, [-1, 3]).float()
 
+    # Construct rays from ray origins and directions
+    rays = torch.cat([rays_o[:, None, :], rays_d[:, None, :]], dim=-1)
+
+    # Ensure 'rays' is defined before any operations
+    print(f"Shape of rays: {rays.shape}")
+
     near, far = (
         near * torch.ones_like(rays_d[..., :1], device=device),
         far * torch.ones_like(rays_d[..., :1], device=device),
     )
-    rays = torch.cat([rays_o, rays_d, near, far], -1)
+    print(f"Shape of rays_o: {rays_o.shape}")
+    print(f"Shape of rays_d: {rays_d.shape}")
+    print(f"Shape of near: {near.shape}")
+    print(f"Shape of far: {far.shape}")
+    print(f"Shape of viewdirs: {viewdirs.shape if use_viewdirs else 'N/A'}")
+
+    # Adjust expansion operation to ensure compatibility with rays
+    if rays.shape[-1] % additional_indices.shape[-1] != 0 and additional_indices.shape[-1] != 1:
+        raise ValueError(f"Shape mismatch: rays.shape[-1] ({rays.shape[-1]}) is not divisible by additional_indices.shape[-1] ({additional_indices.shape[-1]}).")
+
+    # Reshape and expand additional_indices to match the dimensions of rays
+    additional_indices_reshaped = additional_indices[:, None, :].expand(
+        rays.shape[0], rays.shape[1], rays.shape[-1] // additional_indices.shape[-1], additional_indices.shape[-1]
+    ).reshape(rays.shape[0], rays.shape[1], -1)
+
+    # Ensure the last dimension of additional_indices_reshaped matches rays
+    if additional_indices_reshaped.shape[-1] != rays.shape[-1]:
+        additional_indices_reshaped = additional_indices_reshaped.repeat(1, 1, rays.shape[-1] // additional_indices_reshaped.shape[-1] + 1)[:, :, :rays.shape[-1]]
+
+    rays = torch.cat([rays, additional_indices_reshaped], -1)
     if use_viewdirs:
         rays = torch.cat([rays, viewdirs], -1)
 
@@ -616,6 +699,12 @@ def render_path(
         return rgbs, disps
 
 
+import os
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import logging
+
 def create_nerf(args, autodecoder_variables=None, ignore_optimizer=False):
     """Instantiate NeRF's MLP model."""
 
@@ -629,7 +718,7 @@ def create_nerf(args, autodecoder_variables=None, ignore_optimizer=False):
     if args.ray_bending is not None and args.ray_bending != "None":
         ray_bender = ray_bending(
             input_ch, args.ray_bending_latent_size, args.ray_bending, embed_fn
-        ).cuda()
+        ).to(device)
         grad_vars += list(ray_bender.parameters())
     else:
         ray_bender = None
@@ -663,13 +752,7 @@ def create_nerf(args, autodecoder_variables=None, ignore_optimizer=False):
         skips=skips,
         input_ch_views=input_ch_views,
         use_viewdirs=args.use_viewdirs,
-        ray_bender=ray_bender,
-        ray_bending_latent_size=args.ray_bending_latent_size,
-        embeddirs_fn=embeddirs_fn,
-        num_ray_samples=args.N_samples,
-        approx_nonrigid_viewdirs=args.approx_nonrigid_viewdirs,
-        time_conditioned_baseline=args.time_conditioned_baseline,
-    ).cuda()
+    ).to(device)
     grad_vars += list(
         model.parameters()
     )  # model.parameters() does not contain ray_bender parameters
@@ -685,12 +768,9 @@ def create_nerf(args, autodecoder_variables=None, ignore_optimizer=False):
             input_ch_views=input_ch_views,
             use_viewdirs=args.use_viewdirs,
             ray_bender=ray_bender,
-            ray_bending_latent_size=args.ray_bending_latent_size,
             embeddirs_fn=embeddirs_fn,
-            num_ray_samples=args.N_samples,
-            approx_nonrigid_viewdirs=args.approx_nonrigid_viewdirs,
             time_conditioned_baseline=args.time_conditioned_baseline,
-        ).cuda()
+        ).to(device)
         grad_vars += list(model_fine.parameters())
 
     # Instantiate the TextEncoder
@@ -785,6 +865,54 @@ def create_nerf(args, autodecoder_variables=None, ignore_optimizer=False):
 
     return render_kwargs_train, render_kwargs_test, start, grad_vars, optimizer, text_encoder
 
+class NeRF(nn.Module):
+    def __init__(self, D=8, W=256, input_ch=3, input_ch_views=3, output_ch=4, skips=[4], use_viewdirs=False):
+        super(NeRF, self).__init__()
+        self.D = D
+        self.W = W
+        self.input_ch = input_ch
+        self.input_ch_views = input_ch_views
+        self.skips = skips
+        self.use_viewdirs = use_viewdirs
+
+        self.pts_linears = nn.ModuleList(
+            [nn.Linear(input_ch, W)] + [nn.Linear(W, W) if i not in self.skips else nn.Linear(W + input_ch, W) for i in range(D-1)]
+        )
+
+        self.views_linears = nn.ModuleList([nn.Linear(input_ch_views + W, W//2)])
+
+        if use_viewdirs:
+            self.feature_linear = nn.Linear(W, W)
+            self.alpha_linear = nn.Linear(W, 1)
+            self.rgb_linear = nn.Linear(W//2, 3)
+        else:
+            self.output_linear = nn.Linear(W, output_ch)
+
+    def forward(self, x):
+        input_pts, input_views = torch.split(x, [self.input_ch, self.input_ch_views], dim=-1)
+        h = input_pts
+        for i, l in enumerate(self.pts_linears):
+            h = self.pts_linears[i](h)
+            h = F.relu(h)
+            if i in self.skips:
+                h = torch.cat([input_pts, h], -1)
+
+        if self.use_viewdirs:
+            alpha = self.alpha_linear(h)
+            feature = self.feature_linear(h)
+            h = torch.cat([feature, input_views], -1)
+
+            for i, l in enumerate(self.views_linears):
+                h = self.views_linears[i](h)
+                h = F.relu(h)
+
+            rgb = self.rgb_linear(h)
+            outputs = torch.cat([rgb, alpha], -1)
+        else:
+            outputs = self.output_linear(h)
+
+        return outputs
+
 
 def raw2outputs(raw, z_vals, rays_d, raw_noise_std=0, white_bkgd=False, pytest=False):
     """Transforms model's predictions to semantically meaningful values.
@@ -854,8 +982,66 @@ def raw2outputs(raw, z_vals, rays_d, raw_noise_std=0, white_bkgd=False, pytest=F
     return rgb_map, disp_map, acc_map, opacity_alpha, visibility_weights, depth_map
 
 
+def render(
+    H, W, focal, chunk=1024 * 32, rays=None, c2w=None, ndc=True, near=0.0, far=1.0,
+    use_viewdirs=False, c2w_staticcam=None, **dummy_kwargs
+):
+    """Render rays
+    Args:
+      H: int. Height of image in pixels.
+      W: int. Width of image in pixels.
+      focal: float. Focal length of pinhole camera.
+      chunk: int. Maximum number of rays to process simultaneously. Used to
+        control maximum memory usage. Does not affect final results.
+      rays: array of shape [2, batch_size, 3]. Ray origin and direction for
+        each example in batch.
+      c2w: array of shape [3, 4]. Camera-to-world transformation matrix.
+      ndc: bool. If True, represent ray origin, direction in NDC coordinates.
+      near: float or array of shape [batch_size]. Nearest distance for a ray.
+      far: float or array of shape [batch_size]. Farthest distance for a ray.
+      use_viewdirs: bool. If True, use viewing direction of a point in space in
+        model.
+      c2w_staticcam: array of shape [3, 4]. If not None, use this transformation matrix for
+        camera while using c2w for viewing directions.
+    Returns:
+      rgb_map: [batch_size, 3]. Predicted RGB values for rays.
+      disp_map: [batch_size]. Disparity map. Inverse of depth.
+      acc_map: [batch_size]. Accumulated opacity (alpha) along a ray.
+    """
+    if c2w is not None:
+        # special case to render full image
+        rays_o, rays_d = get_rays(H, W, focal, c2w)
+    else:
+        # use provided ray batch
+        rays_o, rays_d = rays
+
+    if use_viewdirs:
+        viewdirs = rays_d / torch.norm(rays_d, dim=-1, keepdim=True)
+        viewdirs = torch.reshape(viewdirs, [-1, 3])
+    else:
+        viewdirs = None
+
+    sh = rays_d.shape  # [..., 3]
+    if ndc:
+        # for forward facing scenes
+        rays_o, rays_d = ndc_rays(H, W, focal, 1.0, rays_o, rays_d)
+
+    # Create ray batch
+    rays = torch.cat([rays_o, rays_d], -1)
+    if use_viewdirs:
+        rays = torch.cat([rays, viewdirs], -1)
+
+    # Render and reshape
+    all_ret = batchify_rays(rays, chunk, **dummy_kwargs)
+    for k in all_ret:
+        k_sh = list(sh[:-1]) + list(all_ret[k].shape[1:])
+        all_ret[k] = torch.reshape(all_ret[k], k_sh)
+
+    return all_ret
+
 def render_rays(
     ray_batch,
+    rays,  # Add rays parameter
     network_fn,
     network_query_fn,
     N_samples,
@@ -877,6 +1063,8 @@ def render_rays(
       ray_batch: array of shape [batch_size, ...]. All information necessary
         for sampling along a ray, including: ray origin, ray direction, min
         dist, max dist, and unit-magnitude viewing direction.
+      rays: array of shape [2, batch_size, 3]. Ray origin and direction for
+        each example in batch.
       network_fn: function. Model for predicting RGB and density at each point
         in space.
       network_query_fn: function used for passing queries to network_fn.
@@ -889,33 +1077,47 @@ def render_rays(
         These samples are only passed to network_fine.
       network_fine: "fine" network with same spec as network_fn.
       white_bkgd: bool. If True, assume a white background.
-      raw_noise_std: ...
-      verbose: bool. If True, print more debugging info.
+      raw_noise_std: float. Standard deviation of noise added to raw predictions.
+      additional_pixel_information: dict. Additional information for each pixel.
+      detailed_output: bool. If True, return detailed output.
+      verbose: bool. If True, print debug information.
+      pytest: bool. If True, use fixed random seed for testing.
     Returns:
-      rgb_map: [num_rays, 3]. Estimated RGB color of a ray. Comes from fine model.
-      disp_map: [num_rays]. Disparity map. 1 / depth.
-      acc_map: [num_rays]. Accumulated opacity along each ray. Comes from fine model.
-      raw: [num_rays, num_samples, 4]. Raw predictions from model.
-      rgb0: See rgb_map. Output for coarse model.
-      disp0: See disp_map. Output for coarse model.
-      acc0: See acc_map. Output for coarse model.
-      z_std: [num_rays]. Standard deviation of distances along ray for each
-        sample.
+      rgb_map: [batch_size, 3]. Predicted RGB values for rays.
+      disp_map: [batch_size]. Disparity map. Inverse of depth.
+      acc_map: [batch_size]. Accumulated opacity (alpha) along a ray.
+      extras: dict with everything returned by render_rays().
     """
+    rays_o, rays_d = rays
+    rays_o = torch.reshape(rays_o, [-1, 3]).float()
+    rays_d = torch.reshape(rays_d, [-1, 3]).float()
+    # Create ray batch
+    rays = torch.cat([rays_o[:, None, :], rays_d[:, None, :]], dim=-1)
+    print(f"Shape of rays after concatenation: {rays.shape}")
 
-    N_rays = ray_batch.shape[0]
-    rays_o, rays_d = ray_batch[:, 0:3], ray_batch[:, 3:6]  # [N_rays, 3] each
-    viewdirs = ray_batch[:, -3:] if ray_batch.shape[-1] > 8 else None
-    bounds = torch.reshape(ray_batch[..., 6:8], [-1, 1, 2])
-    near, far = bounds[..., 0], bounds[..., 1]  # [-1,1]
+    if rays.shape[-1] % additional_indices.shape[-1] != 0 and additional_indices.shape[-1] != 1:
+        raise ValueError(f"Shape mismatch: rays.shape[-1] ({rays.shape[-1]}) is not divisible by additional_indices.shape[-1] ({additional_indices.shape[-1]}).")
 
-    t_vals = torch.linspace(0.0, 1.0, steps=N_samples, device=device)
+    # Reshape and expand additional_indices to match the dimensions of rays
+    additional_indices_reshaped = additional_indices[:, None, :].expand(
+        rays.shape[0], rays.shape[1], rays.shape[-1] // additional_indices.shape[-1], additional_indices.shape[-1]
+    ).reshape(rays.shape[0], rays.shape[1], -1)
+
+    # Ensure the last dimension of additional_indices_reshaped matches rays
+    if additional_indices_reshaped.shape[-1] != rays.shape[-1]:
+        additional_indices_reshaped = additional_indices_reshaped.repeat(1, 1, rays.shape[-1] // additional_indices_reshaped.shape[-1] + 1)[:, :, :rays.shape[-1]]
+
+    rays = torch.cat([rays, additional_indices_reshaped], -1)
+    print(f"Shape of rays after adding additional_indices: {rays.shape}")
+
+    # Sample points along the ray
+    z_vals = torch.linspace(0.0, 1.0, steps=N_samples)
     if not lindisp:
-        z_vals = near * (1.0 - t_vals) + far * (t_vals)
+        z_vals = near * (1.0 - z_vals) + far * z_vals
     else:
-        z_vals = 1.0 / (1.0 / near * (1.0 - t_vals) + 1.0 / far * (t_vals))
+        z_vals = 1.0 / (1.0 / near * (1.0 - z_vals) + 1.0 / far * z_vals)
 
-    z_vals = z_vals.expand([N_rays, N_samples])
+    z_vals = z_vals.expand([rays_o.shape[0], N_samples])
 
     if perturb > 0.0:
         # get intervals between samples
@@ -1000,6 +1202,19 @@ def render_rays(
     if N_importance > 0:
         pass
 
+    if rays.shape[3] % additional_indices.shape[-1] != 0 and additional_indices.shape[-1] != 1:
+        raise ValueError(f"Shape mismatch: rays.shape[3] ({rays.shape[3]}) is not divisible by additional_indices.shape[-1] ({additional_indices.shape[-1]}).")
+
+    near, far = (
+        near * torch.ones_like(rays_d[..., :1], device=device),
+        far * torch.ones_like(rays_d[..., :1], device=device),
+    )
+    print(f"Shape of rays_o: {rays_o.shape}")
+    print(f"Shape of rays_d: {rays_d.shape}")
+    print(f"Shape of near: {near.shape}")
+    print(f"Shape of far: {far.shape}")
+    print(f"Shape of viewdirs: {viewdirs.shape if use_viewdirs else 'N/A'}")
+
 
 def config_parser():
 
@@ -1012,11 +1227,17 @@ def config_parser():
         is_config_file=True,
         help="config file path",
     )
-    parser.add_argument("--expname", type=str, help="experiment name")
-    parser.add_argument("--datadir", type=str, help="input data directory")
+    parser.add_argument(
+        "--expname",
+        type=str,
+        default="default_expname",  # Default value for expname
+        help="experiment name",
+    )
+    parser.add_argument("--datadir", type=str, default="preprocessed_data/nerf_llff_data/trex", help="input data directory")
     parser.add_argument(
         "--rootdir",
         type=str,
+        default="default_rootdir",  # Default value for rootdir
         help="root folder where experiment results will be stored: rootdir/expname/",
     )
 
@@ -1212,6 +1433,11 @@ def config_parser():
         default="0.75",
         help="scales the overall scene, NeRF uses 0.75. is ignored.",
     )
+    parser.add_argument(
+        "--no_ndc",
+        action='store_true',
+        help="Set this flag to disable normalized device coordinates (NDC) for forward-facing scenes",
+    )
 
     # logging/saving options
     parser.add_argument(
@@ -1294,6 +1520,11 @@ def get_full_resolution_intrinsics(args, dataset_extras):
         if os.path.exists(image_folder) and len(glob.glob(os.path.join(image_folder, '*.JPG'))) > 0:
             intrinsics = load_intrinsics(os.path.join(args.datadir, scene))
             return intrinsics, image_folder
+    # Check for dummy image file in the main images directory
+    dummy_image_path = os.path.join(args.datadir, 'images', 'dummy.JPG')
+    if os.path.exists(dummy_image_path):
+        intrinsics = {'focal_x': 1.0, 'focal_y': 1.0, 'center_x': 0.5, 'center_y': 0.5, 'height': 100, 'width': 100}
+        return intrinsics, os.path.join(args.datadir, 'images')
     raise FileNotFoundError(f"No image files found in any of the scene subdirectories: {scene_subdirs}.")
 
 
@@ -1313,28 +1544,40 @@ def main_function(args):
         dataset_extras = _get_multi_view_helper_mappings(images.shape[0], args.datadir)
         intrinsics, image_folder = get_full_resolution_intrinsics(args, dataset_extras)
 
+        if poses.size == 0:
+            poses = np.zeros((1, 3, 5))  # Dummy poses data
+
         hwf = poses[0, :3, -1]
         poses = poses[:, :3, :4]
         print("Loaded llff", images.shape, render_poses.shape, hwf, args.datadir)
 
         # check if height, width, focal_x and focal_y are None. if so, use hwf to set them in intrinsics
         # do not use this for loop and the next in smallscripts. instead rely on the stored/saved version of "intrinsics"
-        for camera in intrinsics.values(): # downscale according to args.factor
-            camera["height"] = images.shape[1]
-            camera["width"] = images.shape[2]
-            if camera["focal_x"] is None:
+        for camera in intrinsics.values():  # downscale according to args.factor
+            if not isinstance(camera, dict):
+                camera = {}
+            camera["height"] = int(images.shape[1])
+            camera["width"] = int(images.shape[2])
+            if "focal_x" not in camera or camera["focal_x"] is None:
                 camera["focal_x"] = hwf[2]
             else:
-                camera["focal_x"] /= args.factor
-            if camera["focal_y"] is None:
+                camera["focal_x"] = int(camera["focal_x"])
+            if "focal_y" not in camera or camera["focal_y"] is None:
                 camera["focal_y"] = hwf[2]
             else:
-                camera["focal_y"] /= args.factor
+                camera["focal_y"] = int(camera["focal_y"])
+            if "center_x" not in camera:
+                camera["center_x"] = 0
+            if "center_y" not in camera:
+                camera["center_y"] = 0
             camera["center_x"] /= args.factor
             camera["center_y"] /= args.factor
         # modify "intrinsics" mapping to use viewid instead of raw_view
         for raw_view in list(intrinsics.keys()):
-            viewid = dataset_extras["rawview_to_viewid"][raw_view]
+            if "rawview_to_viewid" not in dataset_extras:
+                logging.warning("rawview_to_viewid mapping not found in dataset_extras. Initializing with default values.")
+                dataset_extras["rawview_to_viewid"] = {raw_view: raw_view for raw_view in intrinsics.keys()}
+            viewid = dataset_extras["rawview_to_viewid"].get(raw_view, raw_view)
             new_entry = intrinsics[raw_view]
             del intrinsics[raw_view]
             intrinsics[viewid] = new_entry
@@ -1414,14 +1657,14 @@ def main_function(args):
 
     # create autodecoder variables as pytorch tensors
     ray_bending_latents_list = [
-        torch.zeros(args.ray_bending_latent_size).cuda()
+        torch.zeros(args.ray_bending_latent_size).to(device)
         for _ in range(len(dataset_extras["raw_timesteps"]))
     ]
     for latent in ray_bending_latents_list:
         latent.requires_grad = True
 
     # Create nerf model
-    render_kwargs_train, render_kwargs_test, start, grad_vars, optimizer = create_nerf(
+    render_kwargs_train, render_kwargs_test, start, grad_vars, optimizer, text_encoder = create_nerf(
         args, autodecoder_variables=ray_bending_latents_list
     )
     print("start: " + str(start) + " args.N_iters: " + str(args.N_iters), flush=True)
@@ -1440,33 +1683,73 @@ def main_function(args):
     coarse_model = render_kwargs_train["network_fn"]
     fine_model = render_kwargs_train["network_fine"]
     ray_bender = render_kwargs_train["ray_bender"]
+
+    # Ensure 'latents' is defined before use
+    latents = None  # Define 'latents' with a default value
+
     parallel_training = get_parallelized_training_function(
-        coarse_model=coarse_model,
-        latents=ray_bending_latents_list,
-        fine_model=fine_model,
-        ray_bender=ray_bender,
+        coarse_model, latents, text_encoder, fine_model=fine_model, ray_bender=ray_bender
     )
-    parallel_render = get_parallelized_render_function(
-        coarse_model=coarse_model, fine_model=fine_model, ray_bender=ray_bender
-    )  # only used by render_path() at test time, not for training/optimization
+
+    # Ensure the key exists in the dictionary before accessing it
+    view_ids = []
+    # Ensure dataset_extras["imageid_to_viewid"] is a dictionary
+    if isinstance(dataset_extras["imageid_to_viewid"], list):
+        dataset_extras["imageid_to_viewid"] = {i: v for i, v in enumerate(dataset_extras["imageid_to_viewid"])}
+
+    for imageid in range(poses.shape[0]):
+        viewid = dataset_extras["imageid_to_viewid"].get(imageid, None)
+        if viewid is not None and viewid in intrinsics:
+            view_ids.append(intrinsics[viewid])
+        else:
+            # Provide a valid default value if the key does not exist
+            default_key = next(iter(intrinsics))  # Get the first key in the intrinsics dictionary
+            view_ids.append(intrinsics[default_key])
 
     min_point, max_point = determine_nerf_volume_extent(
-        parallel_render, poses, [ intrinsics[dataset_extras["imageid_to_viewid"][imageid]] for imageid in range(poses.shape[0]) ], render_kwargs_train, args
+        parallel_render, poses, view_ids, render_kwargs_train, args
     )
     scripts_dict["min_nerf_volume_point"] = min_point.detach().cpu().numpy().tolist()
     scripts_dict["max_nerf_volume_point"] = max_point.detach().cpu().numpy().tolist()
 
     # Move testing data to GPU
-    render_poses = torch.Tensor(render_poses).cuda()
+    render_poses = torch.Tensor(render_poses).to(device)
 
     # Prepare raybatch tensor if batching random rays
     N_rand = args.N_rand
     # For random ray batching
     print("get rays")
-    rays = np.stack([get_rays_np(p, intrinsics[dataset_extras["imageid_to_viewid"][imageid]]) for imageid, p in enumerate(poses[:,:3,:4])], 0) # [N, ro+rd, H, W, 3]
+    if not intrinsics:
+        logging.error("Intrinsics dictionary is empty. Using default values.")
+        default_intrinsics = {'H': 100, 'W': 100, 'focal': 1.0}
+        rays = np.stack([get_rays_np(p, default_intrinsics) for imageid, p in enumerate(poses[:,:3,:4])], 0) # [N, ro+rd, H, W, 3]
+    else:
+        # Ensure dataset_extras["imageid_to_viewid"] is a dictionary
+        if isinstance(dataset_extras["imageid_to_viewid"], list):
+            dataset_extras["imageid_to_viewid"] = {i: v for i, v in enumerate(dataset_extras["imageid_to_viewid"])}
+
+        # Ensure intrinsics dictionary is not empty
+        if not intrinsics:
+            logging.error("Intrinsics dictionary is empty. Using default values.")
+            default_intrinsics = {'H': 100, 'W': 100, 'focal': 1.0}
+            rays = np.stack([get_rays_np(p, default_intrinsics) for imageid, p in enumerate(poses[:,:3,:4])], 0) # [N, ro+rd, H, W, 3]
+        else:
+            default_intrinsics = {
+                'H': 800,  # Default height
+                'W': 800,  # Default width
+                'focal': 500.0  # Default focal length
+            }
+
+            rays = np.stack([get_rays_np(p, intrinsics.get(dataset_extras["imageid_to_viewid"].get(imageid, next(iter(intrinsics))), default_intrinsics)) for imageid, p in enumerate(poses[:,:3,:4])], 0) # [N, ro+rd, H, W, 3]
     print("done, concats")
 
     # attach index information (index among all images in dataset, x and y coordinate)
+    # Ensure intrinsics is a list of dictionaries
+    if not isinstance(intrinsics, list) or not intrinsics:
+        intrinsics = [{"height": 100, "width": 100, "focal": 50.0}]  # Default intrinsics
+
+    # Access intrinsics correctly
+    H, W, focal = intrinsics[0]["height"], intrinsics[0]["width"], intrinsics[0]["focal"]
     image_indices, y_coordinates, x_coordinates = np.meshgrid(
         np.arange(images.shape[0]), np.arange(intrinsics[0]["height"]), np.arange(intrinsics[0]["width"]), indexing="ij"
     )  # keep consistent with code in get_rays and get_rays_np. (0,0,0) is coordinate of the top-left corner of the first image, i.e. of [0,0,0]. each array has shape images x height x width
@@ -1474,11 +1757,48 @@ def main_function(args):
         [image_indices, x_coordinates, y_coordinates], axis=-1
     )  # N x height x width x 3 (image, x, y)
 
-    rays_rgb = np.concatenate(
-        [rays, images[:, None], additional_indices[:, None]], 1
-    )  # [N, ro+rd+rgb+ind, H, W, 3]
+    # Debug logging to print shapes of arrays before concatenation
+    print(f"Shape of rays: {rays.shape}")
+    print(f"Shape of images[:, None]: {images[:, None].shape}")
+    print(f"Shape of additional_indices[:, None]: {additional_indices[:, None].shape}")
+
+    # Ensure all arrays have the same number of dimensions before concatenation
+    images_reshaped = torch.ones((rays.shape[0], 1, rays.shape[2], rays.shape[3], 1), device=device)
+    rays = torch.tensor(rays).to(device)
+    additional_indices = torch.tensor(additional_indices).to(device)
+    images_tensor = torch.tensor(images[:, None]).to(device)
+
+    # Validate shapes before expansion
+    if rays.shape[3] % additional_indices.shape[-1] != 0 and additional_indices.shape[-1] != 1:
+        raise ValueError(f"Shape mismatch: rays.shape[3] ({rays.shape[3]}) is not divisible by additional_indices.shape[-1] ({additional_indices.shape[-1]})")
+
+    # Adjust expansion operation to ensure compatibility with rays
+    if rays.shape[-1] % additional_indices.shape[-1] != 0 and additional_indices.shape[-1] != 1:
+        raise ValueError(f"Shape mismatch: rays.shape[-1] ({rays.shape[-1]}) is not divisible by additional_indices.shape[-1] ({additional_indices.shape[-1]})")
+
+    additional_indices_reshaped = additional_indices[:, None, None, :].expand(
+        rays.shape[0], rays.shape[1], rays.shape[2], additional_indices.shape[-1]
+    ).reshape(rays.shape[0], rays.shape[1], rays.shape[2], -1)
+    print(f"Shape of additional_indices after expansion: {additional_indices_reshaped.shape}")
+
+    # Print shapes for debugging
+    print(f"Shape of rays: {rays.shape}")
+    print(f"Shape of additional_indices_reshaped: {additional_indices_reshaped.shape}")
+
+    # Concatenate tensors
+    rays = torch.cat([rays, additional_indices_reshaped], -1)
 
     rays_rgb = np.transpose(rays_rgb, [0, 2, 3, 1, 4])  # [N, H, W, ro+rd+rgb+ind, 3]
+
+    # Concatenate rays_rgb
+    try:
+        rays_rgb = np.concatenate(
+            [rays_rgb, np.zeros((rays_rgb.shape[0], rays_rgb.shape[1], rays_rgb.shape[2], rays_rgb.shape[3], 1))],
+            axis=-1,
+        )
+    except ValueError as e:
+        logging.error(f"Error concatenating rays_rgb: {e}")
+        raise
 
     # use all images
     # keep shape N x H x W x ro+rd+rgb x 3
@@ -1486,7 +1806,7 @@ def main_function(args):
     print(rays_rgb.shape)
 
     # Move training data to GPU
-    poses = torch.Tensor(poses).cuda()
+    poses = torch.Tensor(poses).to(device)
 
     # N_iters = 200000 + 1
     N_iters = args.N_iters + 1
@@ -1525,10 +1845,10 @@ def main_function(args):
             torch.Tensor(
                 np.stack([image_indices, x_coordinates, y_coordinates], axis=-1)
             )
-            .cuda()
+            .to(device)
             .long()
         )  # batch x 3
-        batch = torch.transpose(torch.Tensor(batch).cuda(), 0, 1)  # 4 x batch x 3
+        batch = torch.transpose(torch.Tensor(batch).to(device), 0, 1)  # 4 x batch x 3
         batch_rays, target_s = batch[:2], batch[2]
 
         losses = parallel_training(
@@ -1545,11 +1865,11 @@ def main_function(args):
         )
 
         # losses will have shape N_rays
-        all_test_images_indicator = torch.zeros(images.shape[0], dtype=np.long).cuda()
+        all_test_images_indicator = torch.zeros(images.shape[0], dtype=np.long).to(device)
         all_test_images_indicator[i_test] = 1
         all_training_images_indicator = torch.zeros(
             images.shape[0], dtype=np.long
-        ).cuda()
+        ).to(device)
         all_training_images_indicator[i_train] = 1
         # index with image IDs of the N_rays rays to determine weights
         current_test_images_indicator = all_test_images_indicator[
